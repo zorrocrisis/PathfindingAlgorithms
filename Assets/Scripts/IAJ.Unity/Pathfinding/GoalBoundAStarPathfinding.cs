@@ -18,6 +18,8 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
         // Goal Bounding Box for each Node  direction - Bounding limits: minX, maxX, minY, maxY
         public Dictionary<Vector2,Dictionary<string, Vector4>> goalBounds;
 
+        public NodeRecord CurrentPreprocessingNode;
+
         public GoalBoundAStarPathfinding(IOpenSet open, IClosedSet closed, IHeuristic heuristic) : base(open, closed, heuristic)
         {
             grid = new Grid<NodeRecord>((Grid<NodeRecord> global, int x, int y) => new NodeRecord(x, y));
@@ -33,9 +35,11 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
 
         public virtual void InitializePrecomputation(int startX, int startY)
         {
+            
             this.StartPositionX = startX;
             this.StartPositionY = startY;
             this.StartNode = grid.GetGridObject(StartPositionX, StartPositionY);
+            this.CurrentPreprocessingNode = this.StartNode;
 
             //if it is not possible to quantize the positions and find the corresponding nodes, then we cannot proceed
             if (this.StartNode == null) return;
@@ -59,35 +63,21 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
             this.Closed.Initialize();
             this.PreComputationInProgress = true;
 
-
-            string[] directions = { "up", "down", "left", "right"};
-            NodeRecord currentNode = grid.GetGridObject(1, 2);
-            var auxiliaryDict = new Dictionary<string, Vector4>();
-            var nodeKey = new Vector2(currentNode.x, currentNode.y);
-            this.goalBounds.Add(nodeKey, auxiliaryDict);
-
-            foreach(string direction in directions)
-            {
-                this.goalBounds[nodeKey][direction] = new Vector4(currentNode.x, currentNode.x, currentNode.y, currentNode.y);
-
-            }
-
         }
 
         public void MapPreprocess()
         {
-
-            //Square grid, 4 directions
             string[] directions = { "up", "down", "left", "right"};
            
             for (int i = 0; i < this.grid.getHeight(); i++)
             {
                 for (int j = 0; j < this.grid.getWidth(); j++)
                 {
-
+                    
                     NodeRecord currentNode = grid.GetGridObject(j, i);
+                    var nodeKey = new Vector2(j, i);
+                    this.CurrentPreprocessingNode = currentNode;
                     var auxiliaryDict = new Dictionary<string, Vector4>();
-                    var nodeKey = new Vector2(currentNode.x, currentNode.y);
                     this.goalBounds.Add(nodeKey, auxiliaryDict);
 
                     foreach(string direction in directions)
@@ -109,8 +99,15 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
                         }
                     }
 
+                    ResetMapPreprocess();
                     InitializePrecomputation(currentNode.x, currentNode.y);
-                    Floodfill(currentNode);
+
+                    var finished = false;
+
+                    while (!finished)
+                    {
+                        finished = Floodfill(currentNode);
+                    }
 
                 }
             }
@@ -134,7 +131,7 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
 
                 if(Open.CountOpen() == 0)
                 {
-                    this.PreComputationInProgress = false;
+                    //this.PreComputationInProgress = false;
                     return true;
                 }
 
@@ -256,6 +253,27 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
 
         }
 
+        public bool GoalBoundBothInside(int startX, int startY, int genericX, int genericY, int goalX, int goalY)
+        {
+            string[] directions = { "up", "down", "left", "right"};
+            var key = new Vector2(startX, startY);
+            
+            foreach(string direction in directions)
+            {   
+                var box = this.goalBounds[key][direction];
+
+                bool genericNodeInsideBox = genericX >= box.x && genericX <= box.y && genericY >= box.z && genericY <= box.w;
+                bool goalNodeInsideBox = goalX >= box.x && goalX <= box.y && goalY >= box.z && goalY <= box.w;
+
+                if(genericNodeInsideBox && goalNodeInsideBox)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
 
         // Checks if node(x,Y) is in the node(startx, starty) bounding box for the direction: direction
         public bool InsideGoalBoundBox(int startX, int startY, int x, int y, string direction)
@@ -276,6 +294,21 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
                 return true;
 
             return false;
+        }
+
+        
+        public void ResetMapPreprocess()
+        {
+           
+            for (int i = 0; i < this.grid.getHeight(); i++)
+            {
+                for (int j = 0; j < this.grid.getWidth(); j++)
+                {
+
+                    NodeRecord currentNode = grid.GetGridObject(j, i);
+                    currentNode.Reset();
+                }
+            }
         }
     
     }

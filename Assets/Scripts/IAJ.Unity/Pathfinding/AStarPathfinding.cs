@@ -113,10 +113,9 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
                 foreach (var neighbourNode in GetNeighbourList(CurrentNode))
                 {
 
-                    //Implementation of the goalbounding (INCOMPLETE)
                     if(goalBound)
                     {
-                        if (goalBoundPath.InsideGoalBoundBox(CurrentNode.x, CurrentNode.y, neighbourNode.x, neighbourNode.y, "up"))
+                        if (goalBoundPath.GoalBoundBothInside(StartNode.x, StartNode.y, neighbourNode.x, neighbourNode.y, GoalNode.x, GoalNode.y) && neighbourNode.isWalkable)
                         {
                             this.ProcessChildNode(CurrentNode, neighbourNode);
                             //Keeps the maximum size that the open list had

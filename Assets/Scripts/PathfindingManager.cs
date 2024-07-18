@@ -15,7 +15,9 @@ using UnityEngine.Networking;
 public class PathfindingManager : MonoBehaviour
 {
 
-    //Struct for default positions
+    // DEFAULT POSITIONS =====================================================
+
+    // Struct for default positions
     [Serializable]
     public struct SearchPos
     {
@@ -23,7 +25,7 @@ public class PathfindingManager : MonoBehaviour
         public Vector2 goalPos;
     }
 
-    //Struct to store default positions by grid
+    // Struct to store default positions by grid
     [Serializable]
     public struct SearchPosPerGrid
     {
@@ -31,12 +33,48 @@ public class PathfindingManager : MonoBehaviour
         public List<SearchPos> searchPos;
     }
 
-    // "Default Positions are quite useful for testing"
+    // Default positions, useful for testing
     public List<SearchPosPerGrid> defaultPositions;
+
+    //=======================================================================
+
+
+    // SETTINGS =============================================================
 
     [Header("Grid Settings")]
     [Tooltip("Change grid name to change grid properties")]
     public string gridName;
+
+    [Header("Pahfinding Settings")]
+    [Tooltip("Add settings to your liking, useful for faster testing. Can also be changed via arrow keys")]
+    
+    // Public properties useful for testing
+    public algorithmEnum activeAlgorithm;
+    public bool partialPath;
+    public bool useGoalBound;
+
+    //=======================================================================
+
+
+    // AUXILIARY VARIABLES ==================================================
+
+    // Grid configuration
+    public static int width;
+    public static int height;
+    public static float cellSize;
+
+    // Visual grid
+    private VisualGridManager visualGrid;
+    private string[,] textLines;
+
+    // Fields for internal use only
+    public static int startingX = -1;
+    public  static int startingY = -1;
+    public  static int goalX = -1;
+    public  static int goalY = -1;
+
+    // Pahfinding algorithms
+    public AStarPathfinding pathfinding { get; set; }
 
     public enum algorithmEnum{
     AStarZeroHeuristic,
@@ -47,71 +85,43 @@ public class PathfindingManager : MonoBehaviour
     GoalBoundAStar
     };
 
-    [Header("Pahfinding Settings - only select one")]
-    [Tooltip("Add settings to your liking, useful for faster testing")]
-    //public properties useful for testing, you can add other booleans here such as which heuristic to use
-    public algorithmEnum activeAlgorithm;
-    private int algorithmIndex;
-    public bool partialPath;
-    public bool useGoalBound;
-   
-    //Grid configuration
-    public static int width;
-    public static int height;
-    public static float cellSize;
- 
-    //Essential Pathfind classes 
-    public AStarPathfinding pathfinding { get; set; }
-
-    //The Visual Grid
-    private VisualGridManager visualGrid;
-    private string[,] textLines;
-
-    //Private fields for internal use only
-    public static int startingX = -1;
-    public static int startingY = -1;
-    public static int goalX = -1;
-    public static int goalY = -1;
-
-    //Path
+    // Final path / solution
     List<NodeRecord> solution;
 
     // For goal bound pathfinding
     private bool boundingBoxesOn = false;
+    private int algorithmIndex;
+
+    //=======================================================================
+
 
     private void Start()
     {
         // Finding reference of Visual Grid Manager
         visualGrid = GameObject.FindObjectOfType<VisualGridManager>();
 
-        // Creating the Path for the Grid and Creating it
+        // Creating the path for the grid and generating it
         var gridPath = "Assets/Resources/Grid/" + gridName + ".txt";
         this.LoadGrid(gridPath);
 
-        //Initializing the chosen algorithm from the inspector window of the manager
-        if (activeAlgorithm == algorithmEnum.AStarZeroHeuristic)
-            this.pathfinding = new AStarPathfinding(new SimpleUnorderedNodeList(), new SimpleUnorderedNodeList(), new ZeroHeuristic());
-        else if (activeAlgorithm == algorithmEnum.AStarEuclideanHeuristic)
-            this.pathfinding = new AStarPathfinding(new SimpleUnorderedNodeList(), new SimpleUnorderedNodeList(), new EuclideanDistance());
-        else if (activeAlgorithm == algorithmEnum.AStarClosedDictionary)
-            this.pathfinding = new AStarPathfinding(new SimpleUnorderedNodeList(), new ClosedDictionary(), new EuclideanDistance());
-        else if (activeAlgorithm == algorithmEnum.AStarPriorityHeap)
-            this.pathfinding = new AStarPathfinding(new NodePriorityHeap(), new ClosedDictionary(), new EuclideanDistance());
-        else if (activeAlgorithm == algorithmEnum.NodeArrayAStar)
-            this.pathfinding = new NodeArrayAStarPathfinding(new EuclideanDistance());
-        else if (activeAlgorithm == algorithmEnum.GoalBoundAStar)
-            this.pathfinding = new GoalBoundAStarPathfinding(new SimpleUnorderedNodeList(), new SimpleUnorderedNodeList(), new ZeroHeuristic());
+        //Initialize the chosen algorithm
+        initializePathfindingAlgorithm();
 
+        // Keep track of algorithm index for easier selection
         algorithmIndex = (int) activeAlgorithm;
 
+        // Finish generating 
         visualGrid.GridMapVisual(textLines, this.pathfinding.grid);
-
         
         if (this.pathfinding is GoalBoundAStarPathfinding p)
         {
-            //p.MapPreprocess();
+            p.MapPreprocess();
 
-            p.InitializePrecomputation(1, 2);
+            visualGrid.DestroyGrid();
+            visualGrid.GridMapVisual(textLines, this.pathfinding.grid);
+
+            // Prepare grid for updates
+            this.pathfinding.grid.OnGridValueChanged += visualGrid.Grid_OnGridValueChange;
             this.pathfinding.goalBound = useGoalBound;
             this.pathfinding.goalBoundPath = (GoalBoundAStarPathfinding)this.pathfinding;
         }
@@ -132,7 +142,7 @@ public class PathfindingManager : MonoBehaviour
                 var key = new Vector2(startingX, startingY);
                 var p = (GoalBoundAStarPathfinding)this.pathfinding;
                 Debug.Log(p.goalBounds[key]["up"]);
-                visualGrid.fillBoundingBox(pathfinding.grid.GetGridObject(startingX, startingY));
+                //visualGrid.fillBoundingBox(pathfinding.grid.GetGridObject(startingX, startingY));
                 boundingBoxesOn = true;
             }
             else if((startingX !=-1 || startingY != -1) && (goalX != -1 || goalY != -1) && boundingBoxesOn)
@@ -199,12 +209,7 @@ public class PathfindingManager : MonoBehaviour
             var p = (GoalBoundAStarPathfinding)this.pathfinding;
             var key = new Vector2(1, 2);
             
-            if(p.PreComputationInProgress)
-            {
-                NodeRecord node = new NodeRecord(1, 2);
-                p.Floodfill(node);
-            }
-            else if (p.goalBounds[key]["up"] != null)
+            if (p.goalBounds[key]["up"] != null)
             {
                 Debug.Log("Up Box: " + p.goalBounds[key]["up"]);
                 Debug.Log("Down Box: " + p.goalBounds[key]["down"]);
@@ -313,7 +318,7 @@ public class PathfindingManager : MonoBehaviour
 
     }
 
-    // Reads the text file that where the grid "definition" is stored, I don't recomend changing this ^^ 
+    // Reads the text file that where the grid "definition" is stored 
     public void LoadGrid(string gridPath)
     {
 
@@ -327,8 +332,8 @@ public class PathfindingManager : MonoBehaviour
         height = lines.Length;
         width = lines[0].Length - 1;
 
-        // CellSize Formula 
-         cellSize = 700.0f / (width + 2);
+        // Cellsize formula 
+        cellSize = 700.0f / (width + 2);
       
         textLines = new string[height, width];
         int i = 0;
@@ -357,7 +362,18 @@ public class PathfindingManager : MonoBehaviour
 
     public void updateSearchAlgorithm()
     {
-        //Initializing the chosen algorithm from the inspector window of the manager
+        initializePathfindingAlgorithm();
+
+        // Reset visual grid to account for new pathfinding
+        visualGrid.DestroyGrid();
+        visualGrid.GridMapVisual(textLines, this.pathfinding.grid);
+
+        // Prepare grid for updates
+        this.pathfinding.grid.OnGridValueChanged += visualGrid.Grid_OnGridValueChange;
+    }
+
+    public void initializePathfindingAlgorithm()
+    {
         if (activeAlgorithm == algorithmEnum.AStarZeroHeuristic)
             this.pathfinding = new AStarPathfinding(new SimpleUnorderedNodeList(), new SimpleUnorderedNodeList(), new ZeroHeuristic());
         else if (activeAlgorithm == algorithmEnum.AStarEuclideanHeuristic)
@@ -370,13 +386,6 @@ public class PathfindingManager : MonoBehaviour
             this.pathfinding = new NodeArrayAStarPathfinding(new EuclideanDistance());
         else if (activeAlgorithm == algorithmEnum.GoalBoundAStar)
             this.pathfinding = new GoalBoundAStarPathfinding(new SimpleUnorderedNodeList(), new SimpleUnorderedNodeList(), new ZeroHeuristic());
-
-        // Reset visual grid to account for new pathfinding
-        visualGrid.DestroyGrid();
-        visualGrid.GridMapVisual(textLines, this.pathfinding.grid);
-
-        // Prepare grid for updates
-        this.pathfinding.grid.OnGridValueChanged += visualGrid.Grid_OnGridValueChange;
     }
 
 }

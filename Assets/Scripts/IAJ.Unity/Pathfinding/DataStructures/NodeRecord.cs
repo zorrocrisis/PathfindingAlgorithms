@@ -83,7 +83,6 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding.DataStructures
         }
 
 
-        // I wonder where this might be useful...
         public void Reset()
         {
             gCost = int.MaxValue;
