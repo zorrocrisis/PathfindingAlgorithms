@@ -15,6 +15,7 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
         public NodeArrayAStarPathfinding(IHeuristic heuristic) : base(null, null, heuristic)
         {
             grid = new Grid<NodeRecord>((Grid<NodeRecord> global, int x, int y) => new NodeRecord(x, y, index++));
+            index = 0;
             this.InProgress = false;
             this.Heuristic = heuristic;
             this.NodesPerSearch = 100;
