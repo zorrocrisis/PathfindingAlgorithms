@@ -50,8 +50,6 @@ public class PathfindingManager : MonoBehaviour
     
     // Public properties useful for testing
     public algorithmEnum activeAlgorithm;
-    public bool partialPath;
-    public bool useGoalBound;
 
     //=======================================================================
 
@@ -69,9 +67,9 @@ public class PathfindingManager : MonoBehaviour
 
     // Fields for internal use only
     public static int startingX = -1;
-    public  static int startingY = -1;
-    public  static int goalX = -1;
-    public  static int goalY = -1;
+    public static int startingY = -1;
+    public static int goalX = -1;
+    public static int goalY = -1;
 
     // Pahfinding algorithms
     public AStarPathfinding pathfinding { get; set; }
@@ -91,6 +89,8 @@ public class PathfindingManager : MonoBehaviour
     // For goal bound pathfinding
     private bool boundingBoxesOn = false;
     private int algorithmIndex;
+    private bool mapPreprocessingDone = false;
+    public Dictionary<Vector2,Dictionary<string, Vector4>> goalBounds;
 
     //=======================================================================
 
@@ -107,121 +107,30 @@ public class PathfindingManager : MonoBehaviour
         //Initialize the chosen algorithm
         initializePathfindingAlgorithm();
 
-        // Keep track of algorithm index for easier selection
-        algorithmIndex = (int) activeAlgorithm;
-
-        // Finish generating 
+        // Finish generating the visual grid
         visualGrid.GridMapVisual(textLines, this.pathfinding.grid);
-        
-        if (this.pathfinding is GoalBoundAStarPathfinding p)
-        {
-            p.MapPreprocess();
-
-            visualGrid.DestroyGrid();
-            visualGrid.GridMapVisual(textLines, this.pathfinding.grid);
-
-            // Prepare grid for updates
-            this.pathfinding.grid.OnGridValueChanged += visualGrid.Grid_OnGridValueChange;
-            this.pathfinding.goalBound = useGoalBound;
-            this.pathfinding.goalBoundPath = (GoalBoundAStarPathfinding)this.pathfinding;
-        }
-        
-
         pathfinding.grid.OnGridValueChanged += visualGrid.Grid_OnGridValueChange;
 
     }
 
-    // Update is called once per frame
     void Update()
     {
-        // WHAT TO DO AFTER PREPROCES??
-        if(activeAlgorithm == algorithmEnum.GoalBoundAStar)
-        {
-            if((startingX !=-1 || startingY != -1) && (goalX == -1 || goalY == -1) && !boundingBoxesOn)
-            {
-                var key = new Vector2(startingX, startingY);
-                var p = (GoalBoundAStarPathfinding)this.pathfinding;
-                Debug.Log(p.goalBounds[key]["up"]);
-                //visualGrid.fillBoundingBox(pathfinding.grid.GetGridObject(startingX, startingY));
-                boundingBoxesOn = true;
-            }
-            else if((startingX !=-1 || startingY != -1) && (goalX != -1 || goalY != -1) && boundingBoxesOn)
-            {
-                boundingBoxesOn = false;
-            }
-        }
 
-
-        // The first mouse click goes here, it defines the starting position;
-        if (Input.GetMouseButtonDown(0))
-        {
-            //Retrieving clicked position
-            var clickedPosition = UtilsClass.GetMouseWorldPosition();
-
-            int positionX, positionY = 0;
-
-            // Retrieving the grid's corresponding X and Y from the clicked position
-            pathfinding.grid.GetXY(clickedPosition, out positionX, out positionY);
-
-            // Getting the corresponding Node 
-            var node = pathfinding.grid.GetGridObject(positionX, positionY);
-
-            if (node != null && node.isWalkable)
-            {
-                // If we don't have a starting position, set it
-                if (startingX == -1)
-                {
-                    startingX = positionX;
-                    startingY = positionY;
-                    this.visualGrid.SetObjectColor(startingX, startingY, Color.cyan);
-
-                }
-
-                // If we don't have a goal position, set it
-                else if (goalX == -1)
-                {
-                    goalX = positionX;
-                    goalY = positionY;
-                    this.visualGrid.SetObjectColor(startingX, startingY, Color.cyan);
-                    //We can now start the search
-                    InitializeSearch(startingX, startingY, goalX, goalY);
-                }
-
-                // If we press while the algorithm is in progress or after clearing the grid, set another starting position
-                else
-                {
-                    goalY = -1;
-                    goalX = -1;
-                    this.visualGrid.ClearGrid();
-                    startingX = positionX;
-                    startingY = positionY;
-                    this.visualGrid.SetObjectColor(startingX, startingY, Color.cyan);
-                }
-            }
-        }
-
-        // Input Handler: deals with most keyboard inputs
+        // Input Handler: deals with all keyboard inputs
         InputHandler();
 
 
+        // If we're using the goal bound pathfinding, draw the bounding boxes
         if(activeAlgorithm == algorithmEnum.GoalBoundAStar)
         {
-            var p = (GoalBoundAStarPathfinding)this.pathfinding;
-            var key = new Vector2(1, 2);
-            
-            if (p.goalBounds[key]["up"] != null)
-            {
-                Debug.Log("Up Box: " + p.goalBounds[key]["up"]);
-                Debug.Log("Down Box: " + p.goalBounds[key]["down"]);
-                Debug.Log("Left Box: " + p.goalBounds[key]["left"]);
-                Debug.Log("Right Box: " + p.goalBounds[key]["right"]);
-            }
+            drawBoundingBoxes();
         }
 
-        // Make sure you tell the pathfinding algorithm to keep searching
+
+        // Tell the pathfinding algorithm to keep searching
         if (this.pathfinding.InProgress)
         {
-            var finished = this.pathfinding.Search(out this.solution, partialPath);
+            var finished = this.pathfinding.Search(out this.solution);
             if (finished)
             {
                 this.pathfinding.InProgress = false;
@@ -237,16 +146,73 @@ public class PathfindingManager : MonoBehaviour
 
     void InputHandler()
     {
+        // Left mouse click
+        if (Input.GetMouseButtonDown(0))
+        {
+            // Retrieving clicked position and the corresponding grid's X and Y
+            Vector2 clickedGridPosition = mouseToGridPosition();
+
+            // Getting the corresponding node 
+            var node = pathfinding.grid.GetGridObject((int)clickedGridPosition.x, (int)clickedGridPosition.y);
+
+            // If the node is valid...
+            if (node != null && node.isWalkable)
+            {
+                // If we don't have a starting position, set it
+                if (!startingPositionSet())
+                {
+                    startingX = (int)clickedGridPosition.x;
+                    startingY = (int)clickedGridPosition.y;
+
+                    // Color in starting node
+                    this.visualGrid.SetObjectColor(startingX, startingY, Color.cyan);
+                }
+
+                // If we have a starting position but don't have a goal position, set it
+                else if (!goalPositionSet())
+                {
+                    goalX = (int)clickedGridPosition.x;
+                    goalY = (int)clickedGridPosition.y;
+
+                    // We can now start the search
+                    InitializeSearch(startingX, startingY, goalX, goalY);
+                }
+
+                // If we press the left mouse button while the algorithm is in progress or after clearing the grid, set another starting position
+                else
+                {
+                    // Clearing visual grid
+                    this.visualGrid.ClearGrid();
+
+                    // Resetting goal
+                    goalY = -1;
+                    goalX = -1;
+                    
+                    // Getting new start position
+                    startingX = (int)clickedGridPosition.x;
+                    startingY = (int)clickedGridPosition.y;
+
+                    // Color in starting node
+                    this.visualGrid.SetObjectColor(startingX, startingY, Color.cyan);
+                }
+            }
+        }
+
+
         // Space clears the grid
         if (Input.GetKeyDown(KeyCode.Space))
         {
+            startingX = -1;
+            startingY = -1;
+            goalX = -1;
+            goalY = -1;
             this.visualGrid.ClearGrid();
         }
 
+        // Arrow keys make it possible to change the algorithm
         if (Input.GetKeyDown(KeyCode.LeftArrow))
         {
             algorithmIndex--;
-
             if(algorithmIndex <= -1) algorithmIndex = 5;
             activeAlgorithm = (algorithmEnum)algorithmIndex;
             updateSearchAlgorithm();
@@ -259,8 +225,7 @@ public class PathfindingManager : MonoBehaviour
             updateSearchAlgorithm();
         }
 
-
-        // If you press 1-5 keys you pathfinding will use default positions
+        // Pressing 1-5 keys will use default positions for the pathfinding (if available)
         int index = 0;
         if (Input.GetKeyDown(KeyCode.Alpha1))
             index = 1;
@@ -272,6 +237,8 @@ public class PathfindingManager : MonoBehaviour
             index = 4;
         else if (Input.GetKeyDown(KeyCode.Alpha5))
             index = 5;
+
+
         if (index != 0)
         {
             visualGrid.ClearGrid();
@@ -290,14 +257,16 @@ public class PathfindingManager : MonoBehaviour
                 {
                     goalX = (int)actualPositions.goalPos.x;
                     goalY = (int)actualPositions.goalPos.y;
-
                     node = pathfinding.grid.GetGridObject(goalX, goalY);
+
+                    Debug.Log(node);
 
                     if (node != null && node.isWalkable)
                     {
+                        // Draw the bounding boxes in case of goal bound 
                         if(activeAlgorithm == algorithmEnum.GoalBoundAStar)
                         {
-                            visualGrid.fillBoundingBox(pathfinding.grid.GetGridObject(startingX, startingY));
+                            visualGrid.fillBoundingBox(this.pathfinding.grid.GetGridObject(startingX, startingY));
                             boundingBoxesOn = true;
                         }
 
@@ -322,13 +291,13 @@ public class PathfindingManager : MonoBehaviour
     public void LoadGrid(string gridPath)
     {
 
-        //Read the text from directly from the test.txt file
+        // Read the text directly from the test.txt file
         StreamReader reader = new StreamReader(gridPath);
         var fileContent = reader.ReadToEnd();
         reader.Close();
         var lines = fileContent.Split("\n"[0]);
 
-        //Calculating Height and Width from text file
+        // Calculating Height and Width from text file
         height = lines.Length;
         width = lines[0].Length - 1;
 
@@ -366,10 +335,10 @@ public class PathfindingManager : MonoBehaviour
 
         // Reset visual grid to account for new pathfinding
         visualGrid.DestroyGrid();
-        visualGrid.GridMapVisual(textLines, this.pathfinding.grid);
 
-        // Prepare grid for updates
-        this.pathfinding.grid.OnGridValueChanged += visualGrid.Grid_OnGridValueChange;
+        // Finish generating the visual grid
+        visualGrid.GridMapVisual(textLines, this.pathfinding.grid);
+        pathfinding.grid.OnGridValueChanged += visualGrid.Grid_OnGridValueChange;
     }
 
     public void initializePathfindingAlgorithm()
@@ -386,6 +355,64 @@ public class PathfindingManager : MonoBehaviour
             this.pathfinding = new NodeArrayAStarPathfinding(new EuclideanDistance());
         else if (activeAlgorithm == algorithmEnum.GoalBoundAStar)
             this.pathfinding = new GoalBoundAStarPathfinding(new SimpleUnorderedNodeList(), new SimpleUnorderedNodeList(), new ZeroHeuristic());
+
+        // Keep track of algorithm index for easier selection
+        algorithmIndex = (int) activeAlgorithm;
+        
+        // When using goal bound pathfinding, we need to preprocess the map before proceeding
+        if (activeAlgorithm == algorithmEnum.GoalBoundAStar)
+        {
+            var p = (GoalBoundAStarPathfinding)this.pathfinding;
+
+            if(!mapPreprocessingDone)
+            {
+                p.MapPreprocess();
+                mapPreprocessingDone = true;
+
+                // Store the goal bounds for this particular map
+                goalBounds = p.goalBounds;
+            }
+
+            // If we have done the map preprocessing before, retrieve the bounding boxes
+            else
+            {
+                p.goalBounds = goalBounds;
+            }
+        }
+    }
+
+    private bool startingPositionSet()
+    {
+        return startingX != -1;
+    }
+
+    private bool goalPositionSet()
+    {
+        return goalX != -1;
+    }
+
+    private Vector2 mouseToGridPosition()
+    {
+        var clickedPosition = UtilsClass.GetMouseWorldPosition();
+        int positionX, positionY = 0;
+        this.pathfinding.grid.GetXY(clickedPosition, out positionX, out positionY);
+
+        return new Vector2(positionX, positionY);
+        
+    }
+
+    private void drawBoundingBoxes()
+    {
+        if(startingPositionSet() && !goalPositionSet() && !boundingBoxesOn)
+        {
+            // Draw bounding boxes
+            visualGrid.fillBoundingBox(this.pathfinding.grid.GetGridObject(startingX, startingY));
+            boundingBoxesOn = true;
+        }
+        else if(startingPositionSet() && goalPositionSet() && boundingBoxesOn)
+        {
+            boundingBoxesOn = false;
+        }
     }
 
 }

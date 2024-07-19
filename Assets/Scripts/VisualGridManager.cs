@@ -82,7 +82,7 @@ public class VisualGridManager : MonoBehaviour
 
     }
 
-    // Instantiating a Grid Object from the prefab, I know, its a lot of small line in a row but its working :)
+    // Instantiating a grid object from the prefab
     private GameObject CreateGridObject(GameObject prefab, string value, Vector3 position, int fontSize, Color fontColor, Color imageColor)
     {
 
@@ -121,7 +121,7 @@ public class VisualGridManager : MonoBehaviour
 
     }
 
-    //Destroying all of the Grid cells tipically done in the Inspector
+    // Destroying all of the Grid cells
     public void DestroyGrid()
     {
         for (int x = 0; x < this.width; x++)
@@ -132,13 +132,14 @@ public class VisualGridManager : MonoBehaviour
     }
 
 
-    //Setting the color of the Node 
+    //Setting the color of the node 
     public void SetObjectColor(int x, int y, Color color)
     {
         visualGrid[x, y].GetComponent<SpriteRenderer>().color = color;
     }
 
 
+    // Update the grid's colours (manual)
     public void UpdateGrid()
     {
         for (int x = 0; x < width; x++)
@@ -161,6 +162,7 @@ public class VisualGridManager : MonoBehaviour
             }
     }
 
+    // Update the grid's colours (automatic)
     public void Grid_OnGridValueChange(object sender, Grid<NodeRecord>.OnGridValueChangedEventArgs e)
     {
         NodeRecord node = this.grid.GetGridObject(e.x, e.y);
@@ -181,6 +183,7 @@ public class VisualGridManager : MonoBehaviour
         }
     }
 
+    // Draw final path
     public void DrawPath(List<NodeRecord> path)
     {
         int index = 0;
@@ -204,7 +207,7 @@ public class VisualGridManager : MonoBehaviour
     }
 
 
-    // Method that computes the bounding box according to the colors defined in the inspector
+    // Method that draws the bounding box according to the colors defined in the inspector
     public void fillBoundingBox(NodeRecord node)
     {
         var goalBoundingPathfinder = (GoalBoundAStarPathfinding)manager.pathfinding;
@@ -218,21 +221,6 @@ public class VisualGridManager : MonoBehaviour
                     foreach (var c in boundingColors)
                         if (goalBoundingPathfinder.InsideGoalBoundBox(node.x, node.y, x, y, c.direction))
                             this.SetObjectColor(x, y, c.color);
-                }
-            }   
-    }
-
-    public void resetFillBoundingBox(NodeRecord node)
-    {
-        var goalBoundingPathfinder = (GoalBoundAStarPathfinding)manager.pathfinding;
-      
-        for (int x = 0; x < this.width; x++)
-            for (int y = 0; y < this.height; y++)
-            {
-                var currentNode = grid.GetGridObject(x, y);
-                if (currentNode != node && currentNode.isWalkable)
-                {
-                    this.SetObjectColor(x, y, Color.white);
                 }
             }   
     }

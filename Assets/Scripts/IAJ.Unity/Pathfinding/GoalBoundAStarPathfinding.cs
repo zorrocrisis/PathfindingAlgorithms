@@ -12,13 +12,24 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
 {
     public class GoalBoundAStarPathfinding : AStarPathfinding
     {
-        // Cost of moving through the grid
+        // Auxiliary variables for precomputation process
         public bool PreComputationInProgress { get; set; }
+        public IHeuristic PreprocessingHeuristic { get; protected set; }
 
-        // Goal Bounding Box for each Node  direction - Bounding limits: minX, maxX, minY, maxY
+        // Goal Bounding Box for each node's edge - bounding limits: minX, maxX, minY, maxY
         public Dictionary<Vector2,Dictionary<string, Vector4>> goalBounds;
 
-        public NodeRecord CurrentPreprocessingNode;
+        // In this case, we consider only 4 bound boxes
+        private string[] directions = { "up", "down", "left", "right"};
+        private Dictionary<BestGoalBoundEdge, string> directionsToString = new Dictionary<BestGoalBoundEdge, string>
+        {
+            { BestGoalBoundEdge.Up, "up" },
+            { BestGoalBoundEdge.Down, "down" },
+            { BestGoalBoundEdge.Left, "left" },
+            { BestGoalBoundEdge.Right, "right" },
+            { BestGoalBoundEdge.None, "nones" }
+        };
+
 
         public GoalBoundAStarPathfinding(IOpenSet open, IClosedSet closed, IHeuristic heuristic) : base(open, closed, heuristic)
         {
@@ -28,58 +39,65 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
             this.InProgress = false;
             this.PreComputationInProgress = false;
             this.Heuristic = heuristic;
-            this.NodesPerSearch = 100; //by default we process all nodes in a single request, but we changed this
+            this.PreprocessingHeuristic = new ZeroHeuristic(); // do not change
+            this.NodesPerSearch = 100;
             this.goalBounds = new Dictionary<Vector2, Dictionary<string, Vector4>>();
 
         }
 
+        // Similar to InitializePathfindingSearch of A* but without a goal node
         public virtual void InitializePrecomputation(int startX, int startY)
         {
-            
+            // Define important pathfinding nodes
             this.StartPositionX = startX;
             this.StartPositionY = startY;
             this.StartNode = grid.GetGridObject(StartPositionX, StartPositionY);
-            this.CurrentPreprocessingNode = this.StartNode;
 
-            //if it is not possible to quantize the positions and find the corresponding nodes, then we cannot proceed
+            // If it is not possible to quantize the starting node, then we cannot proceed
             if (this.StartNode == null) return;
 
-            // Reset debug and relevant variables here
+            // Reset debug and auxiliary variables here
             this.TotalProcessedNodes = 0;
             this.TotalProcessingTime = 0.0f;
             this.MaxOpenNodes = 0;
 
-            //Starting with the first node
-            var initialNode = new NodeRecord(StartNode.x, StartNode.y)
+            // Define initial node 
+            var initialNode = new NodeRecord(startX, startY)
             {
                 gCost = 0,
                 hCost = 0,
                 index = StartNode.index
             };
 
+            // Get ready for map preprocessing 
             initialNode.CalculateFCost();
             this.Open.Initialize();
             this.Open.AddToOpen(initialNode);
             this.Closed.Initialize();
-            this.PreComputationInProgress = true;
 
         }
 
         public void MapPreprocess()
         {
-            string[] directions = { "up", "down", "left", "right"};
-           
+            // Ensure to use the zero heuristic during the preprocessing
+            IHeuristic heuristicPlaceholder = this.Heuristic;
+            this.Heuristic = this.PreprocessingHeuristic;
+
+            this.PreComputationInProgress = true;
+
+            // Go through all the nodes
             for (int i = 0; i < this.grid.getHeight(); i++)
             {
                 for (int j = 0; j < this.grid.getWidth(); j++)
                 {
                     
+                    // Register new goal bounds entries for this node
                     NodeRecord currentNode = grid.GetGridObject(j, i);
                     var nodeKey = new Vector2(j, i);
-                    this.CurrentPreprocessingNode = currentNode;
                     var auxiliaryDict = new Dictionary<string, Vector4>();
                     this.goalBounds.Add(nodeKey, auxiliaryDict);
 
+                    // Populate new goal bounds with initial values
                     foreach(string direction in directions)
                     {
                         switch (direction)
@@ -99,23 +117,26 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
                         }
                     }
 
+                    // Ensure to start in a clean slate and prepare for floodfilling process
                     ResetMapPreprocess();
                     InitializePrecomputation(currentNode.x, currentNode.y);
 
-                    var finished = false;
-
-                    while (!finished)
+                    // Stop only once we have floodfilled the entire map
+                    var finishedFloodfill = false;
+                    while (!finishedFloodfill)
                     {
-                        finished = Floodfill(currentNode);
+                        finishedFloodfill = Floodfill(currentNode);
                     }
-
                 }
             }
 
+            // Return to the desired heuristic
+            this.Heuristic = heuristicPlaceholder;
+
             this.PreComputationInProgress = false;
-            
         }
 
+        // Very similar to the A star base algorithm, but without a goal node
         public bool Floodfill(NodeRecord initialNode)
         {
 
@@ -123,111 +144,61 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
 
             uint ProcessedNodes = 0;
             int OpenNodes = 0; 
-            NodeRecord CurrentNode;
+            NodeRecord currentNode;
 
-            //While Open is not empty or if nodes havent been all processed 
-            while (ProcessedNodes <= 100)
+
+            while (ProcessedNodes <= NodesPerSearch)
             {   
 
                 if(Open.CountOpen() == 0)
                 {
-                    //this.PreComputationInProgress = false;
+                    // If there aren't any more open nodes to explore, we have successfully floodfilled the map
                     return true;
                 }
 
                 // CurrentNode is the best one from the Open set, start with that
-                CurrentNode = Open.GetBestAndRemove();
-                Closed.AddToClosed(CurrentNode);
+                currentNode = Open.GetBestAndRemove();
+                Closed.AddToClosed(currentNode);
 
-                //If we don't update the grid value here also, some nodes (like the ones in the corners) will not be updated visually
-                //because they aren't neighbours to any other opens nodes and thus are not processed through the "ProcessChildNode"
-                grid.SetGridObject(CurrentNode.x, CurrentNode.y, CurrentNode);
+                // If we don't update the grid value here also, some nodes (like the ones in the corners) will not be updated visually
+                // because they aren't neighbours to any other opens nodes and thus are not processed through the "ProcessChildNode"
+                grid.SetGridObject(currentNode.x, currentNode.y, currentNode);
 
-                //Handle the neighbours/children with something like this
-                foreach (var neighbourNode in GetNeighbourList(CurrentNode))
+                // Handle the neighbours/children
+                foreach (var neighbourNode in GetNeighbourList(currentNode))
                 {
 
-                    this.ProcessChildNode(CurrentNode, neighbourNode);
-                    ProcessedNodes++;
+                    // During the floodfill, we will process all the nodes
+                    this.ProcessChildNode(currentNode, neighbourNode);
 
-                    //Keeps the maximum size that the open list had
-                    OpenNodes = this.Open.CountOpen();
-                        if (OpenNodes > this.MaxOpenNodes)
-                            this.MaxOpenNodes = OpenNodes;
-
-                    if(CurrentNode.Equals(initialNode))
+                    // If the current node is the initial one...
+                    if(currentNode.Equals(initialNode))
                     {
-                       if(neighbourNode.y > initialNode.y)
-                       {
-                            neighbourNode.bestGoalBoundEdge = BestGoalBoundEdge.Up;
-                            Vector4 v = new Vector4(Math.Min(goalBounds[key]["up"].x, neighbourNode.x), Math.Max(goalBounds[key]["up"].y, neighbourNode.x), Math.Min(goalBounds[key]["up"].z, neighbourNode.y), Math.Max(goalBounds[key]["up"].w, neighbourNode.y));
-                            goalBounds[key]["up"] = v;
-                       }
-                       else if(neighbourNode.y < initialNode.y)
-                       {
-                            neighbourNode.bestGoalBoundEdge = BestGoalBoundEdge.Down;
-                            Vector4 v = new Vector4(Math.Min(goalBounds[key]["down"].x, neighbourNode.x), Math.Max(goalBounds[key]["down"].y, neighbourNode.x), Math.Min(goalBounds[key]["down"].z, neighbourNode.y), Math.Max(goalBounds[key]["down"].w, neighbourNode.y));
-                            goalBounds[key]["down"] = v;
-                       }
-                       else
-                       {
-                            if(neighbourNode.x > initialNode.x)
-                            {
-                                neighbourNode.bestGoalBoundEdge = BestGoalBoundEdge.Right;
-                                Vector4 v = new Vector4(Math.Min(goalBounds[key]["right"].x, neighbourNode.x), Math.Max(goalBounds[key]["right"].y, neighbourNode.x), Math.Min(goalBounds[key]["right"].z, neighbourNode.y), Math.Max(goalBounds[key]["right"].w, neighbourNode.y));
-                                goalBounds[key]["right"] = v;
-                            }
-                            else
-                            {
-                                neighbourNode.bestGoalBoundEdge = BestGoalBoundEdge.Left;
-                                Vector4 v = new Vector4(Math.Min(goalBounds[key]["left"].x, neighbourNode.x), Math.Max(goalBounds[key]["left"].y, neighbourNode.x), Math.Min(goalBounds[key]["left"].z, neighbourNode.y), Math.Max(goalBounds[key]["left"].w, neighbourNode.y));
-                                goalBounds[key]["left"] = v;
-                            }
-                       }
-
-                       Debug.Log("X " + neighbourNode.x + ":" + neighbourNode.y);
-                       Debug.Log("Best Edge " + neighbourNode.bestGoalBoundEdge);
+                       PopulateStartingNeighboursWithBestEdge(currentNode, neighbourNode);
                     }
+
+                    // If the current node is not the initial one and the neighbours do not have a best goal bound edge assigned...
                     else if(neighbourNode.bestGoalBoundEdge == BestGoalBoundEdge.None) 
                     {
-                        var bestEdge = CurrentNode.bestGoalBoundEdge;
+                        // Propagate the best goal bound edge to the neighbours
+                        var bestEdge = currentNode.bestGoalBoundEdge;
                         neighbourNode.bestGoalBoundEdge = bestEdge;
 
-                        if(bestEdge == BestGoalBoundEdge.Up)
+                        if (directionsToString.TryGetValue(bestEdge, out var direction))
                         {
-                            Vector4 v = new Vector4(Math.Min(goalBounds[key]["up"].x, neighbourNode.x), Math.Max(goalBounds[key]["up"].y, neighbourNode.x), Math.Min(goalBounds[key]["up"].z, neighbourNode.y), Math.Max(goalBounds[key]["up"].w, neighbourNode.y));
-                            goalBounds[key]["up"] = v;
-                            // Update bounding box limits
-                        }
-                        else if(bestEdge == BestGoalBoundEdge.Down)
-                        {
-                            Vector4 v = new Vector4(Math.Min(goalBounds[key]["down"].x, neighbourNode.x), Math.Max(goalBounds[key]["down"].y, neighbourNode.x), Math.Min(goalBounds[key]["down"].z, neighbourNode.y), Math.Max(goalBounds[key]["down"].w, neighbourNode.y));
-                            goalBounds[key]["down"] = v;
-                            // Update bounding box limits
-                        }
-                        else if(bestEdge == BestGoalBoundEdge.Left)
-                        {
-                            Vector4 v = new Vector4(Math.Min(goalBounds[key]["left"].x, neighbourNode.x), Math.Max(goalBounds[key]["left"].y, neighbourNode.x), Math.Min(goalBounds[key]["left"].z, neighbourNode.y), Math.Max(goalBounds[key]["left"].w, neighbourNode.y));
-                            goalBounds[key]["left"] = v;
-                            // Update bounding box limits
-                        }
-                        else if(bestEdge == BestGoalBoundEdge.Right)
-                        {
-                            Vector4 v = new Vector4(Math.Min(goalBounds[key]["right"].x, neighbourNode.x), Math.Max(goalBounds[key]["right"].y, neighbourNode.x), Math.Min(goalBounds[key]["right"].z, neighbourNode.y), Math.Max(goalBounds[key]["right"].w, neighbourNode.y));
-                            goalBounds[key]["right"] = v;
-                            // Update bounding box limits
-                        }
 
-                        /*
-                        Debug.Log("Neighbour X " + neighbourNode.x + ":" + neighbourNode.y);
-                        Debug.Log("CurrentNode X " + CurrentNode.x + ":" + CurrentNode.y);
-                        Debug.Log("Best Edge Current " + CurrentNode.bestGoalBoundEdge);
-                        Debug.Log("Best Edge neighbourNode " + neighbourNode.bestGoalBoundEdge);
-                        Debug.Log(goalBounds[key]["up"]);
-                        Debug.Log(goalBounds[key]["down"]);
-                        Debug.Log(goalBounds[key]["left"]);
-                        Debug.Log(goalBounds[key]["right"]);
-                        */
+                            // Update bounding box limits
+                            var bound = goalBounds[key][direction];
+                            var updatedBound = new Vector4
+                            (
+                                Math.Min(bound.x, neighbourNode.x),
+                                Math.Max(bound.y, neighbourNode.x),
+                                Math.Min(bound.z, neighbourNode.y),
+                                Math.Max(bound.w, neighbourNode.y)
+                            );
+
+                            goalBounds[key][direction] = updatedBound;
+                        }
                     }
                 }
             } 
@@ -235,33 +206,78 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
             return false;
         }
 
-        private bool IsDirectionValid(NodeRecord currentNode, NodeRecord neighbourNode, string direction)
-        {
-            switch (direction)
+        
+        // Again very similar to the A star algorithm, now with a goal node
+        public override bool Search(out List<NodeRecord> solution) {
+
+            uint ProcessedNodes = 0;
+            int OpenNodes = 0; 
+            NodeRecord currentNode;
+            
+            // While Open is not empty or if nodes havent been all processed, we continue to search (also controlled from the pahtfinding manager) 
+            while (ProcessedNodes <= NodesPerSearch)
             {
-                case "up":
-                    return neighbourNode.y > currentNode.y;
-                case "down":
-                    return neighbourNode.y < currentNode.y;
-                case "left":
-                    return neighbourNode.x < currentNode.x;
-                case "right":
-                    return neighbourNode.x > currentNode.x;
-                default:
-                    return false;
+                if (Open.CountOpen() == 0)
+                {
+                    solution = null;
+                    return true;
+                }
+
+                // CurrentNode is the best one from the Open set, start with that
+                currentNode = Open.GetBestAndRemove();
+
+                // Check if current node is the goal
+                if (currentNode.Equals(GoalNode))
+                {
+                    solution = CalculatePath(currentNode);
+                    InProgress = false;
+                    return true;
+                }
+
+                // Add current node to closed set
+                Closed.AddToClosed(currentNode);
+
+                // If we don't update the grid value here also, some nodes (like the ones in the corners) will not be updated visually
+                // because they aren't neighbours to any other opens nodes and thus are not processed through the "ProcessChildNode"
+                grid.SetGridObject(currentNode.x, currentNode.y, currentNode);
+
+                // Handle the neighbours/children of current node
+                foreach (var neighbourNode in GetNeighbourList(currentNode))
+                {
+                    // We will only process a neighbouring node if the goal is within the starting node's bounding box
+                    // to which the neighbouring node also belongs to
+                    if (GoalBoundBothInside(StartNode.x, StartNode.y, neighbourNode.x, neighbourNode.y, GoalNode.x, GoalNode.y) && neighbourNode.isWalkable)
+                    {
+                        this.ProcessChildNode(currentNode, neighbourNode);
+
+                        //Keeps the maximum size that the open list had (debugging purposes)
+                        OpenNodes = Open.CountOpen();
+                        if (OpenNodes > this.MaxOpenNodes)
+                            this.MaxOpenNodes = OpenNodes;
+
+                        //Increment de processed nodes (debugging purposes)
+                        ProcessedNodes += 1;
+                    }
+                }
+
             }
 
+            //Keep track of processed nodes
+            this.TotalProcessedNodes += ProcessedNodes;
+
+            solution = null;
+            return false;
+        
         }
+
 
         public bool GoalBoundBothInside(int startX, int startY, int genericX, int genericY, int goalX, int goalY)
         {
-            string[] directions = { "up", "down", "left", "right"};
             var key = new Vector2(startX, startY);
             
             foreach(string direction in directions)
             {   
                 var box = this.goalBounds[key][direction];
-
                 bool genericNodeInsideBox = genericX >= box.x && genericX <= box.y && genericY >= box.z && genericY <= box.w;
                 bool goalNodeInsideBox = goalX >= box.x && goalX <= box.y && goalY >= box.z && goalY <= box.w;
 
@@ -274,8 +290,7 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
             return false;
         }
 
-
-        // Checks if node(x,Y) is in the node(startx, starty) bounding box for the direction: direction
+        // Checks if node(x,y) is in the node(startx, starty) bounding box for the direction: direction -> useful for visual grid
         public bool InsideGoalBoundBox(int startX, int startY, int x, int y, string direction)
         {
 
@@ -289,26 +304,86 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
 
             var box = this.goalBounds[key][direction];
             
-            //This is very ugly
             if (x >= box.x && x <= box.y && y >= box.z && y <= box.w)
                 return true;
 
             return false;
         }
 
-        
+  
         public void ResetMapPreprocess()
         {
-           
             for (int i = 0; i < this.grid.getHeight(); i++)
             {
                 for (int j = 0; j < this.grid.getWidth(); j++)
                 {
-
                     NodeRecord currentNode = grid.GetGridObject(j, i);
                     currentNode.Reset();
                 }
             }
+        }
+
+        private void PopulateStartingNeighboursWithBestEdge(NodeRecord initialNode, NodeRecord neighbourNode)
+        {
+            var key = new Vector2(initialNode.x, initialNode.y);
+
+            // We have to define the best edges for the initial neighbours
+            if(neighbourNode.y > initialNode.y)
+            {
+                neighbourNode.bestGoalBoundEdge = BestGoalBoundEdge.Up;
+                Vector4 updatedBound = new Vector4
+                (
+                    Math.Min(goalBounds[key]["up"].x, neighbourNode.x),
+                    Math.Max(goalBounds[key]["up"].y, neighbourNode.x),
+                    Math.Min(goalBounds[key]["up"].z, neighbourNode.y),
+                    Math.Max(goalBounds[key]["up"].w, neighbourNode.y)
+                );
+
+                goalBounds[key]["up"] = updatedBound;
+            }
+            else if(neighbourNode.y < initialNode.y)
+            {
+                neighbourNode.bestGoalBoundEdge = BestGoalBoundEdge.Down;
+                Vector4 updatedBound = new Vector4
+                (
+                    Math.Min(goalBounds[key]["down"].x, neighbourNode.x),
+                    Math.Max(goalBounds[key]["down"].y, neighbourNode.x),
+                    Math.Min(goalBounds[key]["down"].z, neighbourNode.y),
+                    Math.Max(goalBounds[key]["down"].w, neighbourNode.y)
+                );
+
+                goalBounds[key]["down"] = updatedBound;
+            }
+            else
+            {
+                if(neighbourNode.x > initialNode.x)
+                {
+                    neighbourNode.bestGoalBoundEdge = BestGoalBoundEdge.Right;
+                    Vector4 updatedBound = new Vector4
+                    (
+                        Math.Min(goalBounds[key]["right"].x, neighbourNode.x),
+                        Math.Max(goalBounds[key]["right"].y, neighbourNode.x),
+                        Math.Min(goalBounds[key]["right"].z, neighbourNode.y),
+                        Math.Max(goalBounds[key]["right"].w, neighbourNode.y)
+                    );
+
+                    goalBounds[key]["right"] = updatedBound;
+                }
+                else
+                {
+                    neighbourNode.bestGoalBoundEdge = BestGoalBoundEdge.Left;
+                    Vector4 updatedBound = new Vector4
+                    (
+                        Math.Min(goalBounds[key]["left"].x, neighbourNode.x),
+                        Math.Max(goalBounds[key]["left"].y, neighbourNode.x),
+                        Math.Min(goalBounds[key]["left"].z, neighbourNode.y),
+                        Math.Max(goalBounds[key]["left"].w, neighbourNode.y)
+                    );
+
+                    goalBounds[key]["left"] = updatedBound;
+                }
+            }
+
         }
     
     }

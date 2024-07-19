@@ -15,25 +15,30 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
         // Cost of moving through the grid
         protected const float MOVE_STRAIGHT_COST = 1;
         protected const float MOVE_DIAGONAL_COST = 1.5f;
+
         public Grid<NodeRecord> grid { get; set; }
+
+        // Debug/testing variables
         public uint NodesPerSearch { get; set; }
         public uint TotalProcessedNodes { get; protected set; }
         public int MaxOpenNodes { get; protected set; }
         public float TotalProcessingTime { get; set; }
+
+        // Auxiliary variable for the pathfinding manager
         public bool InProgress { get; set; }
+        
+        // Sets used to store nodes
         public IOpenSet Open { get; protected set; }
         public IClosedSet Closed { get; protected set; }
         public IHeuristic Heuristic { get; protected set; }
 
+        // Important pathfinding nodes and respective coordinates
         public NodeRecord GoalNode { get; set; }
         public NodeRecord StartNode { get; set; }
         public int StartPositionX { get; set; }
         public int StartPositionY { get; set; }
         public int GoalPositionX { get; set; }
         public int GoalPositionY { get; set; }
-
-        public bool goalBound = false;
-        public GoalBoundAStarPathfinding goalBoundPath;
 
         public AStarPathfinding(IOpenSet open, IClosedSet closed, IHeuristic heuristic)
         {
@@ -42,11 +47,12 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
             this.Closed = closed;
             this.InProgress = false;
             this.Heuristic = heuristic;
-            this.NodesPerSearch = 100; //by default we process all nodes in a single request, but we changed this
+            this.NodesPerSearch = 100;
 
         }
         public virtual void InitializePathfindingSearch(int startX, int startY, int goalX, int goalY)
         {
+            // Define important pathfinding nodes
             this.StartPositionX = startX;
             this.StartPositionY = startY;
             this.GoalPositionX = goalX;
@@ -54,10 +60,10 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
             this.StartNode = grid.GetGridObject(StartPositionX, StartPositionY);
             this.GoalNode = grid.GetGridObject(GoalPositionX, GoalPositionY);
 
-            //if it is not possible to quantize the positions and find the corresponding nodes, then we cannot proceed
+            // If it is not possible to quantize the positions and find the corresponding nodes, then we cannot proceed
             if (this.StartNode == null || this.GoalNode == null) return;
 
-            // Reset debug and relevant variables here
+            // Reset debug and auxiliary variables here
             this.InProgress = true;
             this.TotalProcessedNodes = 0;
             this.TotalProcessingTime = 0.0f;
@@ -71,18 +77,20 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
                 index = StartNode.index
             };
 
+            // Get ready for pathfinding search
             initialNode.CalculateFCost();
             this.Open.Initialize();
             this.Open.AddToOpen(initialNode);
             this.Closed.Initialize();
         }
-        public virtual bool Search(out List<NodeRecord> solution, bool returnPartialSolution = false) {
+
+        public virtual bool Search(out List<NodeRecord> solution) {
 
             uint ProcessedNodes = 0;
             int OpenNodes = 0; 
             NodeRecord CurrentNode;
             
-            //While Open is not empty or if nodes havent been all processed 
+            // While Open is not empty or if nodes havent been all processed, we continue to search (also controlled from the pahtfinding manager) 
             while (ProcessedNodes <= NodesPerSearch)
             {
                 if (Open.CountOpen() == 0)
@@ -94,7 +102,7 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
                 // CurrentNode is the best one from the Open set, start with that
                 CurrentNode = Open.GetBestAndRemove();
 
-                //Check if current node is the goal
+                // Check if current node is the goal
                 if (CurrentNode.Equals(GoalNode))
                 {
                     solution = CalculatePath(CurrentNode);
@@ -102,44 +110,26 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
                     return true;
                 }
 
+                // Add current node to closed set
                 Closed.AddToClosed(CurrentNode);
 
-                //If we don't update the grid value here also, some nodes (like the ones in the corners) will not be updated visually
-                //because they aren't neighbours to any other opens nodes and thus are not processed through the "ProcessChildNode"
+                // If we don't update the grid value here also, some nodes (like the ones in the corners) will not be updated visually
+                // because they aren't neighbours to any other opens nodes and thus are not processed through the "ProcessChildNode"
                 grid.SetGridObject(CurrentNode.x, CurrentNode.y, CurrentNode);
 
-
-                //Handle the neighbours/children with something like this
+                // Handle the neighbours/children of current node
                 foreach (var neighbourNode in GetNeighbourList(CurrentNode))
                 {
 
-                    if(goalBound)
-                    {
-                        if (goalBoundPath.GoalBoundBothInside(StartNode.x, StartNode.y, neighbourNode.x, neighbourNode.y, GoalNode.x, GoalNode.y) && neighbourNode.isWalkable)
-                        {
-                            this.ProcessChildNode(CurrentNode, neighbourNode);
-                            //Keeps the maximum size that the open list had
-                            OpenNodes = Open.CountOpen();
-                            if (OpenNodes > this.MaxOpenNodes)
-                                this.MaxOpenNodes = OpenNodes;
+                    this.ProcessChildNode(CurrentNode, neighbourNode);
 
-                            //Increment de processed nodes
-                            ProcessedNodes += 1;
-                        }
-                    }
-                    else
-                    {
+                    // Keeps the maximum size that the open list had (debugging purposes)
+                    OpenNodes = Open.CountOpen();
+                    if (OpenNodes > this.MaxOpenNodes)
+                        this.MaxOpenNodes = OpenNodes;
 
-                        this.ProcessChildNode(CurrentNode, neighbourNode);
-                        //Keeps the maximum size that the open list had
-                        OpenNodes = Open.CountOpen();
-                        if (OpenNodes > this.MaxOpenNodes)
-                            this.MaxOpenNodes = OpenNodes;
-
-                        //Increment de processed nodes
-                        ProcessedNodes += 1;
-
-                    }
+                    // Increment de processed nodes (debugging purposes)
+                    ProcessedNodes += 1;
                 }
 
             }
@@ -155,15 +145,15 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
         protected virtual void ProcessChildNode(NodeRecord parentNode, NodeRecord node)
         {
 
-            //Calculate cost of neighbour node
+            // Calculate cost of neighbour node
             var newCost = parentNode.gCost + CalculateDistanceCost(parentNode, node);       
             var newFValue = newCost + Heuristic.H(node, GoalNode);
 
-            //Auxiliary variables to check whether node is in open/closed
+            // Auxiliary variables to check whether node is in open/closed
             var closedNode = Closed.SearchInClosed(node);
             var openNode = Open.SearchInOpen(node);
 
-            //If in Closed and with a higher F value...
+            // If in Closed and with a higher F value...
             if (closedNode != null && closedNode.fCost >= newFValue)
             {
                 //Remove from Closed, update values and add to Open
@@ -175,10 +165,10 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
                 Open.AddToOpen(closedNode);
             }
 
-            //If in Open and with a higher F value..
+            // If in Open and with a higher F value..
             else if (openNode != null && openNode.fCost >= newFValue)
             {
-                //Update the costs
+                // Update the costs
                 openNode.gCost = newCost;
                 openNode.hCost = Heuristic.H(node, GoalNode);
                 openNode.CalculateFCost();
@@ -186,10 +176,10 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
 
             }
 
-            //If node is not in any list ....
+            // If node is not in any list ....
             else if (closedNode == null && openNode == null)
             {        
-                //Update the costs and add to Open
+                // Update the costs and add to Open
                 node.gCost = newCost;
                 node.hCost = Heuristic.H(node, GoalNode);
                 node.CalculateFCost();
@@ -197,14 +187,14 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
                 Open.AddToOpen(node);
             }
 
-            //Update the actual grid value
+            // Update the actual grid value
             grid.SetGridObject(node.x, node.y, node);
         }
 
 
         protected float CalculateDistanceCost(NodeRecord a, NodeRecord b)
         {
-            // Math.abs is quite slow, thus we try to avoid it
+            // Math.abs is quite slow, tried to avoid it
             int xDistance = 0;
             int yDistance = 0;
             int remaining = 0;
@@ -225,7 +215,7 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
             return MOVE_DIAGONAL_COST * Mathf.Min(xDistance, yDistance) + MOVE_STRAIGHT_COST * remaining;
         }
 
-        // You'll need to use this method during the Search, to get the neighboors
+
         protected List<NodeRecord> GetNeighbourList(NodeRecord currentNode)
         {
             List<NodeRecord> neighbourList = new List<NodeRecord>();
@@ -269,8 +259,7 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
             return grid.GetGridObject(x, y);
         }
 
-
-        // Method to calculate the Path, starts from the end Node and goes up until the beggining
+        // Method to calculate the Path, starts from the end Node and goes up until the beginning
         public List<NodeRecord> CalculatePath(NodeRecord endNode)
         {
             List<NodeRecord> path = new List<NodeRecord>();

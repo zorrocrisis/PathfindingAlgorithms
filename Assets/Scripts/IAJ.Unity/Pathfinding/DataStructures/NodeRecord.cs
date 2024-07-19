@@ -12,6 +12,7 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding.DataStructures
         Closed
     }
 
+    // Variable exclusively used for the goal bound algorithm
     public enum BestGoalBoundEdge
     {
         Up,
@@ -23,12 +24,12 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding.DataStructures
 
     public class NodeRecord  : IComparable<NodeRecord>
     {
-        //Coordinates
+        // Coordinates
         public int x;
         public int y;
         public bool isWalkable;
 
-        //A* Stuff
+        // A* Stuff
         public NodeRecord parent;
         public float gCost;
         public float hCost;
@@ -37,6 +38,8 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding.DataStructures
         // Node Record Array Index
         public int index;
         public NodeStatus status;
+
+        // Goal bound best edge
         public BestGoalBoundEdge bestGoalBoundEdge;
         
         public override string ToString()
@@ -75,7 +78,7 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding.DataStructures
 
         }
 
-        //two node records are equal if they refer to the same node
+        // Two node records are equal if they refer to the same node
         public override bool Equals(object obj)
         {
             if (obj is NodeRecord target) return this.x == target.x && this.y == target.y;
