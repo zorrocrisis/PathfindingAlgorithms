@@ -48,8 +48,8 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
             this.InProgress = false;
             this.Heuristic = heuristic;
             this.NodesPerSearch = 100;
-
         }
+
         public virtual void InitializePathfindingSearch(int startX, int startY, int goalX, int goalY)
         {
             // Define important pathfinding nodes

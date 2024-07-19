@@ -90,43 +90,49 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
             {
                 for (int j = 0; j < this.grid.getWidth(); j++)
                 {
-                    
-                    // Register new goal bounds entries for this node
                     NodeRecord currentNode = grid.GetGridObject(j, i);
-                    var nodeKey = new Vector2(j, i);
-                    var auxiliaryDict = new Dictionary<string, Vector4>();
-                    this.goalBounds.Add(nodeKey, auxiliaryDict);
 
-                    // Populate new goal bounds with initial values
-                    foreach(string direction in directions)
+                    if(currentNode.isWalkable)
                     {
-                        switch (direction)
+
+                        // Register new goal bounds entries for this node
+                        var nodeKey = new Vector2(j, i);
+                        var auxiliaryDict = new Dictionary<string, Vector4>();
+                        this.goalBounds.Add(nodeKey, auxiliaryDict);
+
+                        // Populate new goal bounds with initial values
+                        foreach(string direction in directions)
                         {
-                            case "up":
-                                this.goalBounds[nodeKey]["up"] = new Vector4(currentNode.x, currentNode.x, currentNode.y + 1, currentNode.y);
-                                break;
-                            case "down":
-                                this.goalBounds[nodeKey]["down"] = new Vector4(currentNode.x, currentNode.x, currentNode.y, currentNode.y - 1);
-                                break;
-                            case "left":
-                                this.goalBounds[nodeKey]["left"] = new Vector4(currentNode.x, currentNode.x - 1, currentNode.y, currentNode.y);
-                                break;
-                            case "right":
-                                this.goalBounds[nodeKey]["right"] = new Vector4(currentNode.x + 1, currentNode.x, currentNode.y, currentNode.y);
-                                break;
+                            switch (direction)
+                            {
+                                case "up":
+                                    this.goalBounds[nodeKey]["up"] = new Vector4(currentNode.x, currentNode.x, currentNode.y, currentNode.y);
+                                    break;
+                                case "down":
+                                    this.goalBounds[nodeKey]["down"] = new Vector4(currentNode.x, currentNode.x, currentNode.y, currentNode.y);
+                                    break;
+                                case "left":
+                                    this.goalBounds[nodeKey]["left"] = new Vector4(currentNode.x, currentNode.x, currentNode.y, currentNode.y);
+                                    break;
+                                case "right":
+                                    this.goalBounds[nodeKey]["right"] = new Vector4(currentNode.x, currentNode.x, currentNode.y, currentNode.y);
+                                    break;
+                            }
                         }
-                    }
 
-                    // Ensure to start in a clean slate and prepare for floodfilling process
-                    ResetMapPreprocess();
-                    InitializePrecomputation(currentNode.x, currentNode.y);
+                        // Ensure to start in a clean slate and prepare for floodfilling process
+                        ResetMapPreprocess();
+                        InitializePrecomputation(currentNode.x, currentNode.y);
 
-                    // Stop only once we have floodfilled the entire map
-                    var finishedFloodfill = false;
-                    while (!finishedFloodfill)
-                    {
-                        finishedFloodfill = Floodfill(currentNode);
+                        // Stop only once we have floodfilled the entire map
+                        var finishedFloodfill = false;
+                        while (!finishedFloodfill)
+                        {
+                            finishedFloodfill = Floodfill();
+                        }
+
                     }
+                   
                 }
             }
 
@@ -137,10 +143,10 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
         }
 
         // Very similar to the A star base algorithm, but without a goal node
-        public bool Floodfill(NodeRecord initialNode)
+        public bool Floodfill()
         {
 
-            var key = new Vector2(initialNode.x, initialNode.y);
+            var key = new Vector2(this.StartNode.x, this.StartNode.y);
 
             uint ProcessedNodes = 0;
             int OpenNodes = 0; 
@@ -172,9 +178,16 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
                     this.ProcessChildNode(currentNode, neighbourNode);
 
                     // If the current node is the initial one...
-                    if(currentNode.Equals(initialNode))
+                    if(currentNode.Equals(this.StartNode))
                     {
-                       PopulateStartingNeighboursWithBestEdge(currentNode, neighbourNode);
+                   
+                       PopulateStartingNeighboursWithBestEdge(neighbourNode);
+                       if(currentNode.x == 1 && currentNode.y == 26)
+                       {
+                            Debug.Log(neighbourNode.ToString());
+                            Debug.Log(neighbourNode.bestGoalBoundEdge);
+                       }
+
                     }
 
                     // If the current node is not the initial one and the neighbours do not have a best goal bound edge assigned...
@@ -246,7 +259,7 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
                 {
                     // We will only process a neighbouring node if the goal is within the starting node's bounding box
                     // to which the neighbouring node also belongs to
-                    if (GoalBoundBothInside(StartNode.x, StartNode.y, neighbourNode.x, neighbourNode.y, GoalNode.x, GoalNode.y) && neighbourNode.isWalkable)
+                    if (GoalBoundBothInside(this.StartNode.x, this.StartNode.y, neighbourNode.x, neighbourNode.y, GoalNode.x, GoalNode.y) && neighbourNode.isWalkable)
                     {
                         this.ProcessChildNode(currentNode, neighbourNode);
 
@@ -323,12 +336,12 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
             }
         }
 
-        private void PopulateStartingNeighboursWithBestEdge(NodeRecord initialNode, NodeRecord neighbourNode)
+        private void PopulateStartingNeighboursWithBestEdge(NodeRecord neighbourNode)
         {
-            var key = new Vector2(initialNode.x, initialNode.y);
+            var key = new Vector2(this.StartNode.x, this.StartNode.y);
 
             // We have to define the best edges for the initial neighbours
-            if(neighbourNode.y > initialNode.y)
+            if(neighbourNode.y > this.StartNode.y)
             {
                 neighbourNode.bestGoalBoundEdge = BestGoalBoundEdge.Up;
                 Vector4 updatedBound = new Vector4
@@ -341,7 +354,7 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
 
                 goalBounds[key]["up"] = updatedBound;
             }
-            else if(neighbourNode.y < initialNode.y)
+            else if(neighbourNode.y < this.StartNode.y)
             {
                 neighbourNode.bestGoalBoundEdge = BestGoalBoundEdge.Down;
                 Vector4 updatedBound = new Vector4
@@ -356,7 +369,7 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
             }
             else
             {
-                if(neighbourNode.x > initialNode.x)
+                if(neighbourNode.x > this.StartNode.x)
                 {
                     neighbourNode.bestGoalBoundEdge = BestGoalBoundEdge.Right;
                     Vector4 updatedBound = new Vector4

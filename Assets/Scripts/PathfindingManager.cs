@@ -64,6 +64,7 @@ public class PathfindingManager : MonoBehaviour
     // Visual grid
     private VisualGridManager visualGrid;
     private string[,] textLines;
+    private bool visualGridCreated;
 
     // Fields for internal use only
     public static int startingX = -1;
@@ -90,7 +91,7 @@ public class PathfindingManager : MonoBehaviour
     private bool boundingBoxesOn = false;
     private int algorithmIndex;
     private bool mapPreprocessingDone = false;
-    public Dictionary<Vector2,Dictionary<string, Vector4>> goalBounds;
+    private Dictionary<Vector2,Dictionary<string, Vector4>> storedGoalBounds;
 
     //=======================================================================
 
@@ -101,8 +102,20 @@ public class PathfindingManager : MonoBehaviour
         visualGrid = GameObject.FindObjectOfType<VisualGridManager>();
 
         // Creating the path for the grid and generating it
+        #if UNITY_EDITOR
         var gridPath = "Assets/Resources/Grid/" + gridName + ".txt";
+        #else
+        var gridPath = "Assets/Resources/Grid/" + GridSceneParameters.gridName + ".txt";
+        #endif
+
         this.LoadGrid(gridPath);
+
+        // By default, we start with base A*
+        #if UNITY_EDITOR
+        Debug.Log("Starting with algorithm " + algorithmIndex);
+        #else
+        algorithmIndex = 0;
+        #endif
 
         //Initialize the chosen algorithm
         initializePathfindingAlgorithm();
@@ -110,6 +123,7 @@ public class PathfindingManager : MonoBehaviour
         // Finish generating the visual grid
         visualGrid.GridMapVisual(textLines, this.pathfinding.grid);
         pathfinding.grid.OnGridValueChanged += visualGrid.Grid_OnGridValueChange;
+
 
     }
 
@@ -233,10 +247,6 @@ public class PathfindingManager : MonoBehaviour
             index = 2;
         else if (Input.GetKeyDown(KeyCode.Alpha3))
             index = 3;
-        else if (Input.GetKeyDown(KeyCode.Alpha4))
-            index = 4;
-        else if (Input.GetKeyDown(KeyCode.Alpha5))
-            index = 5;
 
 
         if (index != 0)
@@ -357,7 +367,7 @@ public class PathfindingManager : MonoBehaviour
             this.pathfinding = new GoalBoundAStarPathfinding(new SimpleUnorderedNodeList(), new SimpleUnorderedNodeList(), new ZeroHeuristic());
 
         // Keep track of algorithm index for easier selection
-        algorithmIndex = (int) activeAlgorithm;
+        algorithmIndex = (int)activeAlgorithm;
         
         // When using goal bound pathfinding, we need to preprocess the map before proceeding
         if (activeAlgorithm == algorithmEnum.GoalBoundAStar)
@@ -366,19 +376,23 @@ public class PathfindingManager : MonoBehaviour
 
             if(!mapPreprocessingDone)
             {
+                // Helps goal bound preprocessing decide what are walkable nodes and not
+                visualGrid.GridMapSimulated(textLines, this.pathfinding.grid);
+
                 p.MapPreprocess();
                 mapPreprocessingDone = true;
 
                 // Store the goal bounds for this particular map
-                goalBounds = p.goalBounds;
+                storedGoalBounds = p.goalBounds;
             }
 
             // If we have done the map preprocessing before, retrieve the bounding boxes
             else
             {
-                p.goalBounds = goalBounds;
+                p.goalBounds = storedGoalBounds;
             }
         }
+
     }
 
     private bool startingPositionSet()

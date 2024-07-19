@@ -52,7 +52,7 @@ public class VisualGridManager : MonoBehaviour
     }  
 
     // Create the grid according to the text file set in the "Assets/Resources/grid.txt"
-    public void GridMapVisual(string[,] textLines, Grid<NodeRecord> _grid)
+    public void GridMapVisual(string[,] textLines, Grid<NodeRecord> _grid, bool preprocessing=false)
     {
 
         this.width = PathfindingManager.width;
@@ -76,10 +76,38 @@ public class VisualGridManager : MonoBehaviour
                     var node = this.grid.GetGridObject(x, y);
                     node.isWalkable = false;
                     this.SetObjectColor(x, y, Color.black);
+
+                    // If we're doing some sort of preprocessing (like in goalbound), we probably don't have the visual grid active
+                    // but we still need to detect whether nodes are walkable or not
+                    if(preprocessing)
+                    {
+                        var node2 =_grid.GetGridObject(x, y);
+                        node2.isWalkable = false;
+                    }
                 }
             
             }
+    }
 
+    // Create the grid according to the text file set in the "Assets/Resources/grid.txt". If we're doing some sort of preprocessing (like in goalbound),
+    // we probably don't have the visual grid active but we still need to detect whether nodes are walkable or not
+    public void GridMapSimulated(string[,] textLines, Grid<NodeRecord> _grid)
+    {
+
+        //Creating simulated grid from the text file
+        for (int i = 0; i < textLines.GetLength(0); i++)
+            for (int j = 0; j < textLines.GetLength(1); j++)
+            {
+                if (textLines[i, j] == "1")
+                {
+                    // We are reading the textLines from the top left till the bottom right, we need to adjust accordingly
+                    var x = j;
+                    var y = height - i - 1;
+                    var node =_grid.GetGridObject(x, y);
+                    node.isWalkable = false;
+                }
+            
+            }
     }
 
     // Instantiating a grid object from the prefab

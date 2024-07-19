@@ -4,15 +4,16 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class UIManager : MonoBehaviour
 {
 
-    //Pathfinding Manager reference
+    // Pathfinding Manager reference
     [HideInInspector]
     public PathfindingManager manager;
 
-    //Debug Components you can add your own here
+    // Debug Components you can add your own here
     Text debugCoordinates;
     Text debugG;
     Text debugF;
@@ -50,7 +51,6 @@ public class UIManager : MonoBehaviour
         debugMaxNodes = debugTexts[6];
         debugWalkable = debugTexts[7];
         debugPathfindingAlgorithm = debugTexts[8];
-        //useGoal = manager.useGoalBound;
         currentX = -2;
         currentY = -2;
     }
@@ -126,6 +126,15 @@ public class UIManager : MonoBehaviour
                 debugMaxNodes.text = "MaxOpenNodes:" + manager.pathfinding.MaxOpenNodes;
                 debugtotalProcessedNodes.text = "TotalPNodes:" + manager.pathfinding.TotalProcessedNodes;
                 debugtotalProcessingTime.text = "TotalPTime:" + manager.pathfinding.TotalProcessingTime;
-            }
         }
+
+
+        // Used to go back to the main menu
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            SceneManager.LoadScene("MainMenu");    
+        }
+    }
+
+
 }

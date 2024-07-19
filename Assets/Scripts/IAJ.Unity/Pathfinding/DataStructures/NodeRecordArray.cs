@@ -11,7 +11,7 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding.DataStructures
 
         public NodeRecordArray(List<NodeRecord> nodes)
         {
-            //this method creates and initializes the NodeRecordArray for all nodes in the Navigation Graph
+            // This method creates and initializes the NodeRecordArray for all nodes in the Navigation Graph
             this.NodeRecords = new NodeRecord[nodes.Count];
             
             for(int i = 0; i < nodes.Count; i++)
@@ -24,13 +24,14 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding.DataStructures
 
         public NodeRecord GetNodeRecord(NodeRecord node)
         {
-            return NodeRecords[node.index];
+            return this.NodeRecords[node.index];
         }
 
         void IOpenSet.Initialize()
         {
             this.Open.Initialize();
-            //we want this to be very efficient (that's why we use for)
+
+            // We want this to be very efficient (that's why we use for)
             for (int i = 0; i < this.NodeRecords.Length; i++)
             {
                 if(NodeRecords[i].isWalkable)
@@ -57,14 +58,14 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding.DataStructures
 
         public NodeRecord SearchInOpen(NodeRecord nodeRecord) //
         {
-            //Since open is a Node Priority Heap, we can use the method already setup in that data structure
+            // Since open is a Node Priority Heap, we can use the method already setup in that data structure
             return this.Open.SearchInOpen(nodeRecord);
         }
 
         public NodeRecord SearchInClosed(NodeRecord nodeRecord) //
         {
-            if (this.GetNodeRecord(nodeRecord).status == NodeStatus.Closed)
-                return this.GetNodeRecord(nodeRecord);
+            if (nodeRecord.status == NodeStatus.Closed)
+                return nodeRecord;
             else
                 return null;
         }
