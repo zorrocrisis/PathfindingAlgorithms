@@ -1,15 +1,29 @@
 ## **Pahtfinding Algorithms**
-This project, originally part of the evaluation of the 2023/2024 edition of the Artificial Intelligence in Games course, talking place in Instituto Superior Técnico, University of Lisbon, aimed to showcase multiple **pathfinding algorithms in a grid**, additionally seeking to **research and further strengthen their efficiency**. 
+This project, originally part of the evaluation of the Artificial Intelligence in Games course (2023/2024), talking place in Instituto Superior Técnico, University of Lisbon, aimed to showcase multiple **pathfinding algorithms in a grid**, additionally seeking to **research and further strengthen their efficiency**. 
 
-The following document indicates how to access the source code, utilise the executable application and control the program, also describing in further detail the efficiency analysis between pathfinding algorithms. 
+The following document indicates how to access the source code, utilise the executable application and control the program. It also contains an efficiency analysis between the pathfinding algorithms. 
 
-## **Build and Execution**
+## **Source Files and Application**
+The project's source files can be downloaded from this repository. To open the program using Unity (v.2021.3.10f1), simply clone the repository and open the project utilising Unity Hub.
 
-To install this project, follow these steps:
+To test the application, only the files contained in the "Build" folder are necessary. Once those files are downloaded, simply start the executable (see the controls below).
 
-1. Clone the repository: **`git clone https://github.com/zorrocrisis/ShaderProject`**
-2. Open the ShaderProject.snl solution using Visual Studio
-4. Press Ctrl + F5 to execute the program
+## **Application's Controls**
+
+Main Menu:
+- **LMB** can interact with the main menu's buttons, selecting the grid size and exiting the application.
+
+Grid Map:
+- **Esc** exits to the main menu.
+- **1-3** begins the pathfinding with pre-defined starting and goal positions.
+- **LMB** can select the starting and goal positions for a new pathfinding search.
+- **Space** clears the grid.
+- **Left/Right arrow keys** change the current algorithm.
+
+## **Additional Pathfinding Information**
+One can find additional pathfinding information, such as position coordinates and total process time, in the **overlay UI panel in right-side of the screen**. During a pathfinding search, the grid will also showcase multiple coloured tiles, representing different states: red tiles indicate "closed" nodes (which have already been explored), whereas blue tiles indicate "open" ondes (which have not been explored yet).
+
+(IMAGE SHOWING UI PANEL AND COLOURS)
 
 
 ## **Introduction **
@@ -23,29 +37,6 @@ per search and was performed in the giant grid. Notably, the most recent node wa
 the algorithms.
 
 Note: The methods RemoveFromOpenand Replacewere omitted from the analysis since they weren’t used in the algorithm.
-
-## **Controls**
-
-Camera:
-- P - Switch between projection types - orthographic or perspective.
-- C - Change active camera.
-- SCROLL WHEEL - zooms in or out when in projection perspective.
-- LMB (HOLD) - While holding the LMB (left mouse button), dragging the mouse moves the current active camera.
-
-Selection and Real Time Manipulation:
-- RMB (TOGGLE) - Press the RMB (right mouse button) once over a valid object to select it. After selecting, moving the mouse moves the object. You can move the camera freely (with LMB) while RMB is toggled on. You can also use the scrollwheel to vary the "depth" of the object's position. Press RMB again to unselect the object.
-- UP/DOWN arrows - Positive/negative rotation along the y axis of the selected object.
-- LEFT/RIGHT arrows - Positive/negative rotation along the x axis of the selected object.
-- ./, - Positive/negative rotation along the z axis of the selected object (period/comma).
-
-Miscellaneous:
-- M - change cork texture (when cork stopper is selected).
-- I - randomize light position.
-- A - change ambient factor.
-- L - Lock mouse cursor inside window (like an FPS).
-- U - Unlock mouse cursor.
-- F - Take screenshot that will be saved as a .png format in the ../assets/screenshots folder.
-- Esc - Close the window and shut down the application.
 
 ## **Efficiency Analyis**
 
