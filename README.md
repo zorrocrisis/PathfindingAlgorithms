@@ -1,6 +1,8 @@
 ## **Pahtfinding Algorithms**
 This project, originally an evaluation component for the Artificial Intelligence in Games course (2023/2024), talking place in Instituto Superior Técnico, University of Lisbon, aimed to showcase multiple **pathfinding algorithms in video games**, additionally seeking to **research and further strengthen their efficiency**. 
 
+(GIF SHOWING PATHFINDING)
+
 The following document indicates how to access the source code, utilise the executable application and control the program. It also contains an efficiency analysis between the pathfinding algorithms. 
 
 ## **Source Files and Application**
@@ -37,7 +39,7 @@ Below follows a performance analysis of the aforementioned pathfinding algorithm
 
 ## **Efficiency Analyis - Results**
 
-- **A Star Pathfinding – Performance Improvements**
+- **A Star Pathfinding – Improving the Open and Close Sets**
 With the goal of improving the overall performance of the A* algorithm (with the Euclidean Distance heuristic), different data structures were used for the Open and Closed lists. This would, in theory, eliminate the major performance issues of accessing, adding, and removing nodes.
 
 ![imagem](https://github.com/user-attachments/assets/62b63a12-cb08-4bdb-97ac-0a1af28f5c6a)
@@ -53,35 +55,33 @@ With the intent of further improving the performance of the A Star algorithm, a 
 ![imagem](https://github.com/user-attachments/assets/76de2afe-6557-4f9f-8fe3-a316a47317c5)
 
 
-- **Node Array A Star Pathfinding**
+- **Node Array A Star**
 The implementation of the Node Array A Star algorithm (with Euclidean Distance heuristic) allowed **trading memory for speed** by eliminating the need of having a Closed set but creating an array with all existing nodes in order to keep track of their status (Unvisited, Open or Closed).
 
 ![imagem](https://github.com/user-attachments/assets/e10d223a-1d2a-4726-8132-de1af982f849)
 
 Comparing with the data in Table 1, the node record array A Star’s *SearchInClosedmethod* became 688 times faster and 6 times faster when comparing with Table 2 and 3, respectively. Also, the *RemoveFromClosed* got more than 151 times faster in relation to the original A Star algorithm in Table 1. We can also verify that the *AddToClosed*, *SearchInClosed* and *RemoveFromClosedmethods* benefit the most by using this algorithm.
 
-The main method’s (*A*Pathfinding.Search*) overall execution time was about 1.3 times faster than the one registered in Table 3, meaning that **the memory-time trade-off can be rewarding if memory does not represent a significant issue**. It is also worth noticing that while this version of the algorithm processed 19820 nodes, the algorithm with a priority heap for the Open set and a dictionary for the Closed set processed a total of 19925 nodes (slightly higher).
+The main method’s (*AStarPathfinding.Search*) overall execution time was about 1.3 times faster than the one registered in Table 3, meaning that **the memory-time trade-off can be rewarding if memory does not represent a significant issue**. It is also worth noticing that while this version of the algorithm processed 19820 nodes, the algorithm with a priority heap for the Open set and a dictionary for the Closed set processed a total of 19925 nodes (slightly higher).
 
-- **Goal Bound A Star Pathfinding**
-Although the Goal Bounding A* algorithm was not fully implemented, some tests were performed with a primitive, “hard-coded” version and the results showed a significant decrease in the amount of total processed nodes by giving the algorithm a preferred search direction, which lowered the execution times greatly. Similarly, to the node array A*, there is also a trade-off: preprocessing the map can take long periods of time... If the grid used doesn’t change with time, however, we can see how a full implementation could be viable.
+- **Goal Bound A Star**
+The Goal Bound A Star algorithm displayed a **significant decrease in the amount of total processed nodes by giving the algorithm preferred search directions**, which lowered the execution times greatly, especially considering the dimensions of the tested grid map. Similarly, to the node array A*, there is also a **trade-off: preprocessing the map can take a considerable period of time**, despite representing a task which can be easily achieved through parallel computing... In summary, if the utilised grid map has a considerable size and is static - meaning it does not change over time - preprocessing the map and exploiting the goal bound mechanisms can offer a worthwile option in terms of pathfinding efficiency.
 
-(IMAGE HERE)
+(GOAL BOUND IMAGE HERE)
 
-- Overview
-All in all, we can state the Node Record Array A* algorithm displayed the best performance by keeping an array as a record of all the nodes and their corresponding status, thus eliminating the need for a closed set structure altogether.
+- **Analysis Overview**
+All in all, we can state **the Node Record Array A Star algorithm displayed the best overall performance** by keeping an array as a record of all the nodes and their corresponding status, thus eliminating the need for a Closed set structure altogether.
 
-Even more, looking at the results from Table 1, 2 and 3, we can safely state that this algorithm could be easily further improved by implementing a more efficient data structure for the open set, such as the priority heap. Instead of an array, a different way of storing nodes and their attributes is a worthwhile possibility to optimize the algorithm.
+Even more, looking at the results from Table 1, 2 and 3, we can safely state **this algorithm can be easily further improved by implementing a more efficient data structure for the Open set**, such as a priority heap. Instead of an array, a different way of storing nodes and their attributes is a promissing possibility to optimize the algorithm.
 
-By implementing this algorithm, however, one must consider the memory requirements of the node array - a bigger map/grid will result in a more significant storage necessity for this algorithm, which could make other options more attractive
+By implementing the Node Record Array A Star algorithm, however, **one must consider the memory requirements of the node array - a bigger map/grid will result in a more significant storage necessity for this algorithm**, which could make other options, such as the Goal Bound A Star, more attractive.
 
-(IMAGE HERE)
+**Despite the computationally heavy task of preprocessing the (sometimes a very big) map**, which can be mitigated by harnessing the power of parallel computing, **selectively disregarding portions of the map altogether highlight the Goal Bound A Star algorithm**.
 
-## **Program's Dependencies and Assets**
-Unity Version
 
-## **Authors and Acknowledgment**
+## **Authors **
 
-This shader project was developed by **[Miguel Belbute (zorrocrisis)](https://github.com/zorrocrisis)**
+This project was developed by **[Miguel Belbute (zorrocrisis)](https://github.com/zorrocrisis)** with contributions from Guilherme Serpa and Peng Li.
 
-The initial code was contributed by **[Prof. Carlos Martinho](https://fenix.tecnico.ulisboa.pt/homepage/ist14181)**
+The initial code was supplied by **[Prof. Pedro dos Santos](https://fenix.tecnico.ulisboa.pt/homepage/ist12886)**
 
