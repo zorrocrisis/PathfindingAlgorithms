@@ -1,2 +1,96 @@
-# AIJ
- 
+## **Pahtfinding Algorithms**
+This project, originally part of the evaluation of the 2023/2024 edition of the Artificial Intelligence in Games course, talking place in Instituto Superior Técnico, University of Lisbon, aimed to showcase multiple **pathfinding algorithms in a grid**, additionally seeking to **research and further strengthen their efficiency**. 
+
+The following document indicates how to access the source code, utilise the executable application and control the program, also describing in further detail the efficiency analysis between pathfinding algorithms. 
+
+## **Build and Execution**
+
+To install this project, follow these steps:
+
+1. Clone the repository: **`git clone https://github.com/zorrocrisis/ShaderProject`**
+2. Open the ShaderProject.snl solution using Visual Studio
+4. Press Ctrl + F5 to execute the program
+
+
+## **Introduction **
+In order to study pathfinding in games, the following algorithms were implemented in Unity: A* Zero Heuristic (Dijkstra), A* Unordered, A* Dictionary, A* Priority Heap, Node Array A* and Goal Bound A*.
+
+All these versions of the algorithms can be turned on by enabling the different Pathfinding Settingsin the Manager’s inspector window (only one must be selected at any time). Additionally, the utilized grid map can be changed simply by editing the txt file name under Grid Settings, in the Manager’s inspector window.
+
+Below follows an analysis of the performance of the mentioned pathfinding algorithms, done with the aid
+of Unity’s Profilertool. The path tested was the pre-defined path associated with key 3, using 100 nodes
+per search and was performed in the giant grid. Notably, the most recent node was used to solve ties in
+the algorithms.
+
+Note: The methods RemoveFromOpenand Replacewere omitted from the analysis since they weren’t used in the algorithm.
+
+## **Controls**
+
+Camera:
+- P - Switch between projection types - orthographic or perspective.
+- C - Change active camera.
+- SCROLL WHEEL - zooms in or out when in projection perspective.
+- LMB (HOLD) - While holding the LMB (left mouse button), dragging the mouse moves the current active camera.
+
+Selection and Real Time Manipulation:
+- RMB (TOGGLE) - Press the RMB (right mouse button) once over a valid object to select it. After selecting, moving the mouse moves the object. You can move the camera freely (with LMB) while RMB is toggled on. You can also use the scrollwheel to vary the "depth" of the object's position. Press RMB again to unselect the object.
+- UP/DOWN arrows - Positive/negative rotation along the y axis of the selected object.
+- LEFT/RIGHT arrows - Positive/negative rotation along the x axis of the selected object.
+- ./, - Positive/negative rotation along the z axis of the selected object (period/comma).
+
+Miscellaneous:
+- M - change cork texture (when cork stopper is selected).
+- I - randomize light position.
+- A - change ambient factor.
+- L - Lock mouse cursor inside window (like an FPS).
+- U - Unlock mouse cursor.
+- F - Take screenshot that will be saved as a .png format in the ../assets/screenshots folder.
+- Esc - Close the window and shut down the application.
+
+## **Efficiency Analyis**
+
+- A* Pathfinding – Performance Improvements
+With the goal of improving the overall performance of the A* algorithm (with the Euclidean Distance heuristic implemented), different data structures were used for the Open and Closed lists. This eliminates the major performance issues of accessing, adding, and removing nodes, as we can infer from the overall reduction of the average execution times of the different methods used.
+
+(IMAGE HERE)
+
+After using the dictionary data structure for the closed set, the performance of the two last methods listed (related to operations using the closed set) drastically improved, having a great impact in the execution time of the A*Pathfinding.Searchmethod. More specifically, the execution time of SearchInClosedand RemoveFromCloseddecreased 120 times and 30 times, respectively.
+
+Considering the large size of the closed set – up to 2606 nodes using the path chosen – it makes sense to implement a data structure that can easily retrieve any needed nodes, thus increasing the overall performance of the algorithm by decreasing the time spent searching for information. The dictionary allows exactly for a faster means of retrieving nodes since it utilizes a hash lookup, whereas in an unordered list we needed to rely on iteration (i.e. going through the whole list until we find the result).
+
+(IMAGE HERE)
+
+With the intent of further improving the performance of the A* algorithm, a priority heap data structure was used for the open set, in addition to the previous dictionary for the closed set. This implementation slightly reduced the execution time of SearchInOpen(about 2 times lower than the previous value), and although the AddToOpen took, on average, longer to execute, the execution time of GetBestAndRemove also decreased (again, about 2 times lower). The execution time of the main method, A*Pathfinding.Search, also decreased 1.3 times.
+
+- Node Array A* Pathfinding
+The implementation of the Node Array A* algorithm (with Euclidean Distance) allowed trading memory for speed by eliminating the need of having a closed set but creating an array with all existing nodes in order to keep track of their status (Unvisited, Open or Closed).
+
+(IMAGE HERE)
+
+Comparing with the data in Table 1, the node record array A*’s SearchInClosedmethod became 688 times faster and 6 times faster when comparing with Table 2 and 3. Also, the RemoveFromClosedgot more than 151 times faster in relation to the that of the Table 1. We can see that the AddToClosed, SearchInClosedand RemoveFromClosedmethods benefit the most by using this algorithm.
+
+The main method’s (A*Pathfinding.Search) overall execution time was about 1.3 times faster than the one registered in Table 3, meaning that the memory-time trade-off can be somewhat rewarding if memory isn’t a significant issue. It’s also worth noticing that while this version of the algorithm processes 19820 nodes, the algorithm with a priority heap for the open set and a dictionary for the closed set process a total of 19925 nodes
+
+- Goal Bound A* Pathfinding
+Although the Goal Bounding A* algorithm was not fully implemented, some tests were performed with a primitive, “hard-coded” version and the results showed a significant decrease in the amount of total processed nodes by giving the algorithm a preferred search direction, which lowered the execution times greatly. Similarly, to the node array A*, there is also a trade-off: preprocessing the map can take long periods of time... If the grid used doesn’t change with time, however, we can see how a full implementation could be viable.
+
+(IMAGE HERE)
+
+- Overview
+All in all, we can state the Node Record Array A* algorithm displayed the best performance by keeping an array as a record of all the nodes and their corresponding status, thus eliminating the need for a closed set structure altogether.
+
+Even more, looking at the results from Table 1, 2 and 3, we can safely state that this algorithm could be easily further improved by implementing a more efficient data structure for the open set, such as the priority heap. Instead of an array, a different way of storing nodes and their attributes is a worthwhile possibility to optimize the algorithm.
+
+By implementing this algorithm, however, one must consider the memory requirements of the node array - a bigger map/grid will result in a more significant storage necessity for this algorithm, which could make other options more attractive
+
+(IMAGE HERE)
+
+## **Program's Dependencies and Assets**
+Unity Version
+
+## **Authors and Acknowledgment**
+
+This shader project was developed by **[Miguel Belbute (zorrocrisis)](https://github.com/zorrocrisis)**
+
+The initial code was contributed by **[Prof. Carlos Martinho](https://fenix.tecnico.ulisboa.pt/homepage/ist14181)**
+
