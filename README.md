@@ -1,5 +1,5 @@
 ## **Pahtfinding Algorithms**
-This project, originally part of the evaluation of the Artificial Intelligence in Games course (2023/2024), talking place in Instituto Superior Técnico, University of Lisbon, aimed to showcase multiple **pathfinding algorithms in a grid**, additionally seeking to **research and further strengthen their efficiency**. 
+This project, originally an evaluation component for the Artificial Intelligence in Games course (2023/2024), talking place in Instituto Superior Técnico, University of Lisbon, aimed to showcase multiple **pathfinding algorithms in video games**, additionally seeking to **research and further strengthen their efficiency**. 
 
 The following document indicates how to access the source code, utilise the executable application and control the program. It also contains an efficiency analysis between the pathfinding algorithms. 
 
@@ -26,9 +26,13 @@ One can find additional pathfinding information, such as position coordinates an
 (IMAGE SHOWING UI PANEL AND COLOURS)
 
 ## **Efficiency Analysis - Introduction **
-In order to study pathfinding in games, the following algorithms were implemented in Unity: A* Zero Heuristic (Dijkstra), A* Unordered, A* Dictionary, A* Priority Heap, Node Array A* and Goal Bound A*.
+In order to study the efficiency of pathfinding algorithms in video games, the following **main algorithms** were implemented in C# (and Unity v.2021.3.10f1): **Dijkstra** (A Star with Zero Heuristic), **A Star** (with Euclidean Distance Heuristic), **Node Array A Star** and **Goal Bound A Star**.
 
-All these versions of the algorithms can be turned on by enabling the different Pathfinding Settingsin the Manager’s inspector window (only one must be selected at any time). Additionally, the utilized grid map can be changed simply by editing the txt file name under Grid Settings, in the Manager’s inspector window.
+Additionally, the following **secondary optimisations** were implemented, **influencing the manner through which the grid nodes are stored and managed** in the Open and Closed sets: **A Star with Closed Dictionary**, **A Star with Closed Dictionary and Open Priority Heap**.
+
+
+WIPPPPPPPPPPPP
+Within Unity, these algorithms can be turned on by enabling the different *Pathfinding Settings* in the Manager’s inspector window. Additionally, the utilized grid map can be changed simply by editing the *Grid Name* property under *Grid Settings*, also in the Manager’s inspector window.
 
 Below follows an analysis of the performance of the mentioned pathfinding algorithms, done with the aid
 of Unity’s Profilertool. The path tested was the pre-defined path associated with key 3, using 100 nodes
