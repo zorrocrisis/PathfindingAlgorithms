@@ -67,6 +67,8 @@ The main method’s (*AStarPathfinding.Search*) overall execution time was about
 - **Goal Bound A Star**
 The Goal Bound A Star algorithm displayed a **significant decrease in the amount of total processed nodes by giving the algorithm preferred search directions**, which lowered the execution times greatly, especially considering the dimensions of the tested grid map. Similarly, to the node array A*, there is also a **trade-off: preprocessing the map can take a considerable period of time**, despite representing a task which can be easily achieved through parallel computing... In summary, if the utilised grid map has a considerable size and is static - meaning it does not change over time - preprocessing the map and exploiting the goal bound mechanisms can offer a worthwile option in terms of pathfinding efficiency.
 
+IN certain map locations (dead ends) it can behave similarly to Dijkstra (O BASE ASTA) so we need to add impovemenets
+
 (GOAL BOUND IMAGE HERE)
 
 - **Analysis Overview**
