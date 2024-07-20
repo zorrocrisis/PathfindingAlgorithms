@@ -27,7 +27,7 @@ One can find additional pathfinding information, such as position coordinates an
 
 (IMAGE SHOWING UI PANEL AND COLOURS)
 
-## **Efficiency Analysis - Introduction **
+## **Efficiency Analysis - Introduction**
 In order to study the efficiency of pathfinding algorithms in video games, the following **main algorithms** were implemented in C# (and Unity v.2021.3.10f1): **Dijkstra** (A Star with Zero Heuristic), **A Star** (with Euclidean Distance Heuristic), **Node Array A Star** and **Goal Bound A Star**.
 
 Additionally, the following **secondary optimisations** were implemented, **influencing the manner through which the grid nodes are stored and managed** in the Open and Closed sets: **A Star with Closed Dictionary** and **Open Priority Heap**.
@@ -79,7 +79,7 @@ By implementing the Node Record Array A Star algorithm, however, **one must cons
 **Despite the computationally heavy task of preprocessing the (sometimes a very big) map**, which can be mitigated by harnessing the power of parallel computing, **selectively disregarding portions of the map altogether highlight the Goal Bound A Star algorithm**.
 
 
-## **Authors**
+## **Authors and Acknowledgements**
 
 This project was developed by **[Miguel Belbute (zorrocrisis)](https://github.com/zorrocrisis)** with contributions from Guilherme Serpa and Peng Li.
 
