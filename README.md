@@ -11,22 +11,21 @@ To test the application, only the files contained in the "Build" folder are nece
 ## **Application's Controls**
 
 Main Menu:
-- **LMB** can interact with the main menu's buttons, selecting the grid size and exiting the application.
+- **LMB** interacts with the main menu's buttons, selecting the grid size and exiting the application.
 
 Grid Map:
 - **Esc** exits to the main menu.
 - **1-3** begins the pathfinding with pre-defined starting and goal positions.
-- **LMB** can select the starting and goal positions for a new pathfinding search.
+- **LMB** selects the starting and goal positions for a new pathfinding search.
 - **Space** clears the grid.
 - **Left/Right arrow keys** change the current algorithm.
 
 ## **Additional Pathfinding Information**
-One can find additional pathfinding information, such as position coordinates and total process time, in the **overlay UI panel in right-side of the screen**. During a pathfinding search, the grid will also showcase multiple coloured tiles, representing different states: red tiles indicate "closed" nodes (which have already been explored), whereas blue tiles indicate "open" ondes (which have not been explored yet).
+One can find additional pathfinding information, such as position coordinates and total process time, in the **overlay UI panel in right-side of the screen**. During a pathfinding search, the grid will also showcase multiple **coloured tiles**, representing different states: **red tiles indicate "closed" nodes** (which have already been explored), whereas **blue tiles indicate "open" ondes (which have not been explored yet)**. The goal bound A* algorithm also paints the tiles according to the corresponding boundary boxes, though these colours overlap (yellow - "up" is the best starting edge; green - "down" is the best starting edge; light blue - "left" is the best starting edge; purple - "right" is the best starting edge).
 
 (IMAGE SHOWING UI PANEL AND COLOURS)
 
-
-## **Introduction **
+## **Efficiency Analysis - Introduction **
 In order to study pathfinding in games, the following algorithms were implemented in Unity: A* Zero Heuristic (Dijkstra), A* Unordered, A* Dictionary, A* Priority Heap, Node Array A* and Goal Bound A*.
 
 All these versions of the algorithms can be turned on by enabling the different Pathfinding Settingsin the Manager’s inspector window (only one must be selected at any time). Additionally, the utilized grid map can be changed simply by editing the txt file name under Grid Settings, in the Manager’s inspector window.
@@ -38,7 +37,7 @@ the algorithms.
 
 Note: The methods RemoveFromOpenand Replacewere omitted from the analysis since they weren’t used in the algorithm.
 
-## **Efficiency Analyis**
+## **Efficiency Analyis - Results**
 
 - A* Pathfinding – Performance Improvements
 With the goal of improving the overall performance of the A* algorithm (with the Euclidean Distance heuristic implemented), different data structures were used for the Open and Closed lists. This eliminates the major performance issues of accessing, adding, and removing nodes, as we can infer from the overall reduction of the average execution times of the different methods used.
