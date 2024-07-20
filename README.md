@@ -79,7 +79,7 @@ By implementing the Node Record Array A Star algorithm, however, **one must cons
 **Despite the computationally heavy task of preprocessing the (sometimes a very big) map**, which can be mitigated by harnessing the power of parallel computing, **selectively disregarding portions of the map altogether highlight the Goal Bound A Star algorithm**.
 
 
-## **Authors **
+## **Authors**
 
 This project was developed by **[Miguel Belbute (zorrocrisis)](https://github.com/zorrocrisis)** with contributions from Guilherme Serpa and Peng Li.
 
