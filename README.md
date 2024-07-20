@@ -28,44 +28,41 @@ One can find additional pathfinding information, such as position coordinates an
 ## **Efficiency Analysis - Introduction **
 In order to study the efficiency of pathfinding algorithms in video games, the following **main algorithms** were implemented in C# (and Unity v.2021.3.10f1): **Dijkstra** (A Star with Zero Heuristic), **A Star** (with Euclidean Distance Heuristic), **Node Array A Star** and **Goal Bound A Star**.
 
-Additionally, the following **secondary optimisations** were implemented, **influencing the manner through which the grid nodes are stored and managed** in the Open and Closed sets: **A Star with Closed Dictionary**, **A Star with Closed Dictionary and Open Priority Heap**.
+Additionally, the following **secondary optimisations** were implemented, **influencing the manner through which the grid nodes are stored and managed** in the Open and Closed sets: **A Star with Closed Dictionary** and **Open Priority Heap**.
 
+Within Unity, all algorithms can be turned on by enabling the corresponding *Pathfinding Settings* in the Manager’s inspector window. Additionally, the utilized grid map can be changed simply by editing the *Grid Name* property under *Grid Settings*, also in the Manager’s inspector window.
 
-WIPPPPPPPPPPPP
-Within Unity, these algorithms can be turned on by enabling the different *Pathfinding Settings* in the Manager’s inspector window. Additionally, the utilized grid map can be changed simply by editing the *Grid Name* property under *Grid Settings*, also in the Manager’s inspector window.
+Below follows a performance analysis of the aforementioned pathfinding algorithms, performed with the aid of Unity’s Profilertool. The tested path was the pre-defined path associated with key 3, using 100 nodes per search and the giant grid. The most recent node was used to solve ties in the algorithms.
 
-Below follows an analysis of the performance of the mentioned pathfinding algorithms, done with the aid
-of Unity’s Profilertool. The path tested was the pre-defined path associated with key 3, using 100 nodes
-per search and was performed in the giant grid. Notably, the most recent node was used to solve ties in
-the algorithms.
-
-Note: The methods RemoveFromOpenand Replacewere omitted from the analysis since they weren’t used in the algorithm.
 
 ## **Efficiency Analyis - Results**
 
-- A* Pathfinding – Performance Improvements
-With the goal of improving the overall performance of the A* algorithm (with the Euclidean Distance heuristic implemented), different data structures were used for the Open and Closed lists. This eliminates the major performance issues of accessing, adding, and removing nodes, as we can infer from the overall reduction of the average execution times of the different methods used.
+- **A Star Pathfinding – Performance Improvements**
+With the goal of improving the overall performance of the A* algorithm (with the Euclidean Distance heuristic), different data structures were used for the Open and Closed lists. This would, in theory, eliminate the major performance issues of accessing, adding, and removing nodes.
 
-(IMAGE HERE)
+![imagem](https://github.com/user-attachments/assets/62b63a12-cb08-4bdb-97ac-0a1af28f5c6a)
 
-After using the dictionary data structure for the closed set, the performance of the two last methods listed (related to operations using the closed set) drastically improved, having a great impact in the execution time of the A*Pathfinding.Searchmethod. More specifically, the execution time of SearchInClosedand RemoveFromCloseddecreased 120 times and 30 times, respectively.
+Considering the large size of the Closed set – up to 2606 nodes using the chosen path – it makes sense to implement **data structures which can easily retrieve any needed nodes**, thus increasing the overall performance of the algorithm by decreasing the time spent searching for information. A dictionary data structure allows exactly for a faster means of retrieving nodes since it utilises a hash lookup, whereas an unordered list (employed in A Star with Zero and Euclidean Heuristics) relies on iteration (i.e. going through the whole list until we find the desired node). 
 
-Considering the large size of the closed set – up to 2606 nodes using the path chosen – it makes sense to implement a data structure that can easily retrieve any needed nodes, thus increasing the overall performance of the algorithm by decreasing the time spent searching for information. The dictionary allows exactly for a faster means of retrieving nodes since it utilizes a hash lookup, whereas in an unordered list we needed to rely on iteration (i.e. going through the whole list until we find the result).
+After using the dictionary data structure for the Closed set (A Star with Closed Dictionary), we can indeed verify the performance of the two last methods listed (related to operations using the Closed set) drastically improved, having a great impact in the execution time of the *AStarPathfinding.Search* method. More specifically, the execution time of *SearchInClosed* and *RemoveFromClosed* decreased 120 times and 30 times, respectively.
 
-(IMAGE HERE)
+![imagem](https://github.com/user-attachments/assets/aa5531c3-99e2-4e15-9559-f6e963257567)
 
-With the intent of further improving the performance of the A* algorithm, a priority heap data structure was used for the open set, in addition to the previous dictionary for the closed set. This implementation slightly reduced the execution time of SearchInOpen(about 2 times lower than the previous value), and although the AddToOpen took, on average, longer to execute, the execution time of GetBestAndRemove also decreased (again, about 2 times lower). The execution time of the main method, A*Pathfinding.Search, also decreased 1.3 times.
+With the intent of further improving the performance of the A Star algorithm, a priority heap data structure was used for the Open set, in addition to the previous dictionary for the Closed set (A Star with Closed Dictionary and Open Priority Heap). This implementation slightly reduced the execution time of SearchInOpen (about 2 times lower than the previous value), and although the *AddToOpen* took, on average, longer to execute, the execution time of *GetBestAndRemove* also decreased (again, about 2 times lower). The execution time of the main method, *AStarPathfinding.Search*, also decreased 1.3 times.
 
-- Node Array A* Pathfinding
-The implementation of the Node Array A* algorithm (with Euclidean Distance) allowed trading memory for speed by eliminating the need of having a closed set but creating an array with all existing nodes in order to keep track of their status (Unvisited, Open or Closed).
+![imagem](https://github.com/user-attachments/assets/76de2afe-6557-4f9f-8fe3-a316a47317c5)
 
-(IMAGE HERE)
 
-Comparing with the data in Table 1, the node record array A*’s SearchInClosedmethod became 688 times faster and 6 times faster when comparing with Table 2 and 3. Also, the RemoveFromClosedgot more than 151 times faster in relation to the that of the Table 1. We can see that the AddToClosed, SearchInClosedand RemoveFromClosedmethods benefit the most by using this algorithm.
+- **Node Array A Star Pathfinding**
+The implementation of the Node Array A Star algorithm (with Euclidean Distance heuristic) allowed **trading memory for speed** by eliminating the need of having a Closed set but creating an array with all existing nodes in order to keep track of their status (Unvisited, Open or Closed).
 
-The main method’s (A*Pathfinding.Search) overall execution time was about 1.3 times faster than the one registered in Table 3, meaning that the memory-time trade-off can be somewhat rewarding if memory isn’t a significant issue. It’s also worth noticing that while this version of the algorithm processes 19820 nodes, the algorithm with a priority heap for the open set and a dictionary for the closed set process a total of 19925 nodes
+![imagem](https://github.com/user-attachments/assets/e10d223a-1d2a-4726-8132-de1af982f849)
 
-- Goal Bound A* Pathfinding
+Comparing with the data in Table 1, the node record array A Star’s *SearchInClosedmethod* became 688 times faster and 6 times faster when comparing with Table 2 and 3, respectively. Also, the *RemoveFromClosed* got more than 151 times faster in relation to the original A Star algorithm in Table 1. We can also verify that the *AddToClosed*, *SearchInClosed* and *RemoveFromClosedmethods* benefit the most by using this algorithm.
+
+The main method’s (*A*Pathfinding.Search*) overall execution time was about 1.3 times faster than the one registered in Table 3, meaning that **the memory-time trade-off can be rewarding if memory does not represent a significant issue**. It is also worth noticing that while this version of the algorithm processed 19820 nodes, the algorithm with a priority heap for the Open set and a dictionary for the Closed set processed a total of 19925 nodes (slightly higher).
+
+- **Goal Bound A Star Pathfinding**
 Although the Goal Bounding A* algorithm was not fully implemented, some tests were performed with a primitive, “hard-coded” version and the results showed a significant decrease in the amount of total processed nodes by giving the algorithm a preferred search direction, which lowered the execution times greatly. Similarly, to the node array A*, there is also a trade-off: preprocessing the map can take long periods of time... If the grid used doesn’t change with time, however, we can see how a full implementation could be viable.
 
 (IMAGE HERE)
