@@ -27,7 +27,6 @@ One can find additional pathfinding information, such as positional coordinates,
 
 ![Screenshot 2024-07-18 154253](https://github.com/user-attachments/assets/07978a30-a238-4355-bc96-7cf23ecb56b5)
 
-
 ## **Efficiency Analysis - Introduction**
 In order to study the efficiency of pathfinding algorithms in video games, the following **main algorithms** were implemented in C# (and Unity v.2021.3.10f1): **Dijkstra** (A Star with Zero Heuristic), **A Star** (with Euclidean Distance Heuristic), **Node Array A Star** and **Goal Bound A Star**.
 
@@ -43,7 +42,7 @@ Below follows a performance analysis of the aforementioned pathfinding algorithm
 - **A Star Pathfinding – Improving the Open and Close Sets**
 With the goal of improving the overall performance of the A* algorithm (with the Euclidean Distance heuristic), different data structures were used for the Open and Closed lists. This would, in theory, eliminate the major performance issues of accessing, adding, and removing nodes.
 
-![imagem](https://github.com/user-attachments/assets/62b63a12-cb08-4bdb-97ac-0a1af28f5c6a)
+![imagem](https://github.com/user-attachments/assets/8e822198-c1ea-4345-9353-3f51c62ebe86)
 
 Considering the large size of the Closed set – up to 2606 nodes using the chosen path – it makes sense to implement **data structures which can easily retrieve any needed nodes**, thus increasing the overall performance of the algorithm by decreasing the time spent searching for information. A dictionary data structure allows exactly for a faster means of retrieving nodes since it utilises a hash lookup, whereas an unordered list (employed in A Star with Zero and Euclidean Heuristics) relies on iteration (i.e. going through the whole list until we find the desired node). 
 
