@@ -1,7 +1,7 @@
 ## **Pahtfinding Algorithms**
 This project, originally an evaluation component for the Artificial Intelligence in Games course (2023/2024), talking place in Instituto Superior Técnico, University of Lisbon, aimed to showcase multiple **pathfinding algorithms in video games**, additionally seeking to **research and further strengthen their efficiency**. 
 
-![pathfinding](https://github.com/user-attachments/assets/0e124add-320e-4f59-8689-2a7b39e6ac8d)
+![pathfinding](https://github.com/user-attachments/assets/5d6efe70-b4eb-4c56-9da0-1b2ae98aad88)
 
 The following document indicates how to access the source code, utilise the executable application and control the program. It also contains an efficiency analysis between the pathfinding algorithms. 
 
