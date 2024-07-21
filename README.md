@@ -42,7 +42,7 @@ Below follows a performance analysis of the aforementioned pathfinding algorithm
 - **A Star Pathfinding – Improving the Open and Close Sets**
 With the goal of improving the overall performance of the A* algorithm (with the Euclidean Distance heuristic), different data structures were used for the Open and Closed lists. This would, in theory, eliminate the major performance issues of accessing, adding, and removing nodes.
 
-![imagem](https://github.com/user-attachments/assets/8e822198-c1ea-4345-9353-3f51c62ebe86)
+![imagem](https://github.com/user-attachments/assets/0303d3c5-096d-413d-a879-c7b67913a45e)
 
 Considering the large size of the Closed set – up to 2606 nodes using the chosen path – it makes sense to implement **data structures which can easily retrieve any needed nodes**, thus increasing the overall performance of the algorithm by decreasing the time spent searching for information. A dictionary data structure allows exactly for a faster means of retrieving nodes since it utilises a hash lookup, whereas an unordered list (employed in A Star with Zero and Euclidean Heuristics) relies on iteration (i.e. going through the whole list until we find the desired node). 
 
