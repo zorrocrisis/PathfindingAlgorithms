@@ -93,7 +93,7 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding.DataStructures
 
         public void RemoveFromClosed(NodeRecord nodeRecord) //
         {
-            nodeRecord.status = NodeStatus.Unvisited;
+            this.GetNodeRecord(nodeRecord).status = NodeStatus.Unvisited;
         }
 
         ICollection<NodeRecord> IOpenSet.All()

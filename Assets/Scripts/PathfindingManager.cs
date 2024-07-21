@@ -494,7 +494,7 @@ public class PathfindingManager : MonoBehaviour
         #if UNITY_EDITOR
             path = Path.Combine(Application.dataPath, "Resources/Grid/" + gridName + "PreprocessedData.txt");
         #else
-            path = Path.Combine(Application.dataPath, "Resources/Grid", GridSceneParameters.gridName + "PreprocessedData.txt");
+            path = Path.Combine(Application.dataPath, "Resources/Grid" + GridSceneParameters.gridName + "PreprocessedData.txt");
         #endif
 
         if (!File.Exists(path))
