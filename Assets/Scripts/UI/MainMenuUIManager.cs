@@ -22,6 +22,13 @@ public class MainMenuUIManager : MonoBehaviour
         SceneManager.LoadScene("Grid Scene");
     }
 
+    public void GiantGrid()
+    {
+        GridSceneParameters.gridName = "giantGrid";
+        SceneManager.LoadScene("Grid Scene");
+    }
+
+
 
     public void Exit()
     {

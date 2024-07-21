@@ -10,11 +10,13 @@ using UnityEngine;
 
 namespace Assets.Scripts.IAJ.Unity.Pathfinding
 {
-    public class GoalBoundAStarPathfinding : AStarPathfinding
+    public class GoalBoundAStarPathfinding2 : AStarPathfinding
     {
         // Auxiliary variables for precomputation process
         public bool PreComputationInProgress { get; set; }
         public IHeuristic PreprocessingHeuristic { get; protected set; }
+        public IOpenSet OpenPlaceholder { get; protected set; }
+        public IClosedSet ClosedPlaceholder { get; protected set; }
 
         // Goal Bounding Box for each node's edge - bounding limits: minX, maxX, minY, maxY
         public Dictionary<Vector2,Dictionary<string, Vector4>> goalBounds;
@@ -31,14 +33,16 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
         };
 
 
-        public GoalBoundAStarPathfinding(IOpenSet open, IClosedSet closed, IHeuristic heuristic) : base(open, closed, heuristic)
+        public GoalBoundAStarPathfinding2(IOpenSet open, IClosedSet closed, IHeuristic heuristic) : base(open, closed, heuristic)
         {
             grid = new Grid<NodeRecord>((Grid<NodeRecord> global, int x, int y) => new NodeRecord(x, y));
-            this.Open = open;
-            this.Closed = closed;
+            this.Open = new SimpleUnorderedNodeList();
+            this.Closed = new SimpleUnorderedNodeList();
             this.InProgress = false;
             this.PreComputationInProgress = false;
             this.Heuristic = heuristic;
+            this.OpenPlaceholder = open;
+            this.ClosedPlaceholder = closed;
             this.PreprocessingHeuristic = new ZeroHeuristic(); // do not change
             this.NodesPerSearch = 100;
             this.goalBounds = new Dictionary<Vector2, Dictionary<string, Vector4>>();
@@ -88,7 +92,6 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
             // Go through all the nodes
             for (int i = 0; i < this.grid.getHeight(); i++)
             {
-
                 for (int j = 0; j < this.grid.getWidth(); j++)
                 {
                     NodeRecord currentNode = grid.GetGridObject(j, i);
@@ -137,8 +140,10 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
                 }
             }
 
-            // Return to the desired heuristic
+            // Return to the desired heuristic and open/closed sets
             this.Heuristic = heuristicPlaceholder;
+            this.Open = this.OpenPlaceholder;
+            this.Closed = this.ClosedPlaceholder;
 
             this.PreComputationInProgress = false;
         }
@@ -157,15 +162,15 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
             while (ProcessedNodes <= NodesPerSearch)
             {   
 
-                if(Open.CountOpen() == 0)
+                if(this.Open.CountOpen() == 0)
                 {
                     // If there aren't any more open nodes to explore, we have successfully floodfilled the map
                     return true;
                 }
 
                 // CurrentNode is the best one from the Open set, start with that
-                currentNode = Open.GetBestAndRemove();
-                Closed.AddToClosed(currentNode);
+                currentNode = this.Open.GetBestAndRemove();
+                this.Closed.AddToClosed(currentNode);
 
                 // If we don't update the grid value here also, some nodes (like the ones in the corners) will not be updated visually
                 // because they aren't neighbours to any other opens nodes and thus are not processed through the "ProcessChildNode"

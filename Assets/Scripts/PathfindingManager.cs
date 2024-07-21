@@ -88,6 +88,7 @@ public class PathfindingManager : MonoBehaviour
     List<NodeRecord> solution;
 
     // For goal bound pathfinding
+    public bool usePreviousMapPreprocessedData;
     private bool boundingBoxesOn = false;
     private int algorithmIndex;
     private bool mapPreprocessingDone = false;
@@ -103,18 +104,18 @@ public class PathfindingManager : MonoBehaviour
 
         // Creating the path for the grid and generating it
         #if UNITY_EDITOR
-        var gridPath = "Assets/Resources/Grid/" + gridName + ".txt";
+            string gridPath = "Assets/Resources/Grid/" + gridName + ".txt";
         #else
-        var gridPath = "Assets/Resources/Grid/" + GridSceneParameters.gridName + ".txt";
+            string gridPath = "Assets/Resources/Grid/" + GridSceneParameters.gridName + ".txt";
         #endif
 
         this.LoadGrid(gridPath);
 
         // By default, we start with base A*
         #if UNITY_EDITOR
-        Debug.Log("Starting with algorithm " + algorithmIndex);
+            Debug.Log("Starting with algorithm " + algorithmIndex);
         #else
-        algorithmIndex = 0;
+            algorithmIndex = 0;
         #endif
 
         //Initialize the chosen algorithm
@@ -269,8 +270,6 @@ public class PathfindingManager : MonoBehaviour
                     goalY = (int)actualPositions.goalPos.y;
                     node = pathfinding.grid.GetGridObject(goalX, goalY);
 
-                    Debug.Log(node);
-
                     if (node != null && node.isWalkable)
                     {
                         // Draw the bounding boxes in case of goal bound 
@@ -372,25 +371,7 @@ public class PathfindingManager : MonoBehaviour
         // When using goal bound pathfinding, we need to preprocess the map before proceeding
         if (activeAlgorithm == algorithmEnum.GoalBoundAStar)
         {
-            var p = (GoalBoundAStarPathfinding)this.pathfinding;
-
-            if(!mapPreprocessingDone)
-            {
-                // Helps goal bound preprocessing decide what are walkable nodes and not
-                visualGrid.GridMapSimulated(textLines, this.pathfinding.grid);
-
-                p.MapPreprocess();
-                mapPreprocessingDone = true;
-
-                // Store the goal bounds for this particular map
-                storedGoalBounds = p.goalBounds;
-            }
-
-            // If we have done the map preprocessing before, retrieve the bounding boxes
-            else
-            {
-                p.goalBounds = storedGoalBounds;
-            }
+            HandleGoalBoundMapPreprocessing();
         }
 
     }
@@ -427,6 +408,156 @@ public class PathfindingManager : MonoBehaviour
         {
             boundingBoxesOn = false;
         }
+    }
+   
+    private void HandleGoalBoundMapPreprocessing()
+    {
+        var p = (GoalBoundAStarPathfinding)this.pathfinding;
+
+        // If we haven't done the map preprocessing yet, do it now
+        if(!mapPreprocessingDone)
+        {
+            // Saves preprocessing time if users are mainly interested in the build
+            #if UNITY_EDITOR
+
+                if(!usePreviousMapPreprocessedData)
+                {
+                    // Helps goal bound preprocessing decide what are walkable nodes and not
+                    visualGrid.GridMapSimulated(textLines, this.pathfinding.grid);
+
+                    p.MapPreprocess();
+
+                    // Store the goal bounds for this particular map
+                    storedGoalBounds = p.goalBounds;
+                    RegisterMapPreprocessedData();
+
+                }
+                else
+                {
+                    // Use previously obtained map preprocessing data
+                    ReadMapPreprocessedData();
+                    p.goalBounds = storedGoalBounds;
+                }
+
+            #else
+                // Use previously obtained map preprocessing data
+                ReadMapPreprocessedData();
+                p.goalBounds = storedGoalBounds;
+            #endif
+
+            mapPreprocessingDone = true;
+        }
+
+        // If we have done the map preprocessing before, retrieve the bounding boxes
+        else
+        {
+            p.goalBounds = storedGoalBounds;
+        }
+
+    }
+
+    private void RegisterMapPreprocessedData()
+    {
+        string[] directions = { "up", "down", "left", "right"};
+        string path = Path.Combine(Application.dataPath, "Resources/Grid", GridSceneParameters.gridName + "PreprocessedData.txt");
+
+        // Go through all the nodes
+        for (int i = 0; i < this.pathfinding.grid.getHeight(); i++)
+        {
+ 
+            for (int j = 0; j < this.pathfinding.grid.getWidth(); j++)
+            {
+                NodeRecord currentNode = this.pathfinding.grid.GetGridObject(j, i);
+
+                if(currentNode.isWalkable)
+                {
+                    var currentNodeKey = new Vector2(currentNode.x, currentNode.y);
+
+                    // Write to .txt file the obtained bound boxes
+                    foreach(string direction in directions)
+                    {
+                        string content = $"{currentNode.x}:{currentNode.y}:{storedGoalBounds[currentNodeKey][direction].x}:{storedGoalBounds[currentNodeKey][direction].y}:{storedGoalBounds[currentNodeKey][direction].z}:{storedGoalBounds[currentNodeKey][direction].w}";        
+                        File.AppendAllText(path, content + Environment.NewLine);
+                    }
+                }
+            }
+        }
+
+        Debug.Log("Preprocessed data registered successfully.");
+    }
+
+    private void ReadMapPreprocessedData()
+    {
+        string[] directions = { "up", "down", "left", "right"};
+        string path;
+
+        #if UNITY_EDITOR
+            path = Path.Combine(Application.dataPath, "Resources/Grid/" + gridName + "PreprocessedData.txt");
+        #else
+            path = Path.Combine(Application.dataPath, "Resources/Grid", GridSceneParameters.gridName + "PreprocessedData.txt");
+        #endif
+
+        if (!File.Exists(path))
+        {
+            Debug.LogError("Preprocessed data file not found: " + path);
+            return;
+        }
+
+        // Initialize the storedGoalBounds dictionary if not already initialized
+        if (this.storedGoalBounds == null)
+        {
+            this.storedGoalBounds = new Dictionary<Vector2, Dictionary<string, Vector4>>();
+        }
+
+        // Read all lines from the file containing the bound boxes
+        string[] lines = File.ReadAllLines(path);
+
+        int directionIndex = 0;
+
+        foreach (string line in lines)
+        {
+            // Split the line by colon to extract the data
+            string[] parts = line.Split(':');
+
+            int x = int.Parse(parts[0]);
+            int y = int.Parse(parts[1]);
+            int boundMinX = int.Parse(parts[2]);
+            int boundMaxX = int.Parse(parts[3]);
+            int boundMinY = int.Parse(parts[4]);
+            int boundMaxY = int.Parse(parts[5]);
+
+            Vector2 currentNodeKey = new Vector2(x, y);
+
+            if (!this.storedGoalBounds.ContainsKey(currentNodeKey))
+            {
+                this.storedGoalBounds[currentNodeKey] = new Dictionary<string, Vector4>();
+            }
+
+            switch(directionIndex)
+            {
+                case 0: 
+                    this.storedGoalBounds[currentNodeKey]["up"] = new Vector4(boundMinX, boundMaxX, boundMinY, boundMaxY);
+                    directionIndex++;
+                    break;
+
+                case 1: 
+                    this.storedGoalBounds[currentNodeKey]["down"] = new Vector4(boundMinX, boundMaxX, boundMinY, boundMaxY);
+                    directionIndex++;
+                    break;
+
+                case 2: 
+                    this.storedGoalBounds[currentNodeKey]["left"] = new Vector4(boundMinX, boundMaxX, boundMinY, boundMaxY);
+                    directionIndex++;
+                    break;
+
+                case 3: 
+                    this.storedGoalBounds[currentNodeKey]["right"] = new Vector4(boundMinX, boundMaxX, boundMinY, boundMaxY);
+                    directionIndex = 0;
+                    break;
+            }
+        }
+
+        Debug.Log("Preprocessed data read successfully.");
     }
 
 }

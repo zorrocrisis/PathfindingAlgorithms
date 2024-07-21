@@ -1,6 +1,9 @@
 ﻿using UnityEngine;
-using UnityEditor;
 using System.IO;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Assets.Scripts.IAJ.Unity.Utils
 {
@@ -12,31 +15,35 @@ namespace Assets.Scripts.IAJ.Unity.Utils
         /// </summary>
         public static void CreateAsset<T>() where T : ScriptableObject
         {
-            T asset = ScriptableObject.CreateInstance<T>();
+            #if UNITY_EDITOR
+                        T asset = ScriptableObject.CreateInstance<T>();
 
-            CreateAssetFromInstance<T>(asset);
+                        CreateAssetFromInstance<T>(asset);
+            #endif
         }
 
         public static void CreateAssetFromInstance<T>(T assetInstance) where T : ScriptableObject
         {
-            string path = AssetDatabase.GetAssetPath(Selection.activeObject);
-            if (path == "")
-            {
-                path = "Assets";
-            }
-            else if (Path.GetExtension(path) != "")
-            {
-                path = path.Replace(Path.GetFileName(AssetDatabase.GetAssetPath(Selection.activeObject)), "");
-            }
+            #if UNITY_EDITOR
+                string path = AssetDatabase.GetAssetPath(Selection.activeObject);
+                if (path == "")
+                {
+                    path = "Assets";
+                }
+                else if (Path.GetExtension(path) != "")
+                {
+                    path = path.Replace(Path.GetFileName(AssetDatabase.GetAssetPath(Selection.activeObject)), "");
+                }
             
-            string assetPathAndName = AssetDatabase.GenerateUniqueAssetPath(path +  "/" + typeof(T).Name.ToString() + ".asset");
+                string assetPathAndName = AssetDatabase.GenerateUniqueAssetPath(path +  "/" + typeof(T).Name.ToString() + ".asset");
 
-            AssetDatabase.CreateAsset(assetInstance, assetPathAndName);
-            EditorUtility.SetDirty(assetInstance);
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
-            EditorUtility.FocusProjectWindow();
-            Selection.activeObject = assetInstance;
+                AssetDatabase.CreateAsset(assetInstance, assetPathAndName);
+                EditorUtility.SetDirty(assetInstance);
+                AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh();
+                EditorUtility.FocusProjectWindow();
+                Selection.activeObject = assetInstance;
+            #endif
         }
     }
 }
