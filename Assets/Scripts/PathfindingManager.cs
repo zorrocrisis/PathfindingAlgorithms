@@ -363,7 +363,7 @@ public class PathfindingManager : MonoBehaviour
         else if (activeAlgorithm == algorithmEnum.NodeArrayAStar)
             this.pathfinding = new NodeArrayAStarPathfinding(new EuclideanDistance());
         else if (activeAlgorithm == algorithmEnum.GoalBoundAStar)
-            this.pathfinding = new GoalBoundAStarPathfinding(new SimpleUnorderedNodeList(), new SimpleUnorderedNodeList(), new ZeroHeuristic());
+            this.pathfinding = new GoalBoundAStarPathfinding2(new NodePriorityHeap(), new ClosedDictionary(), new EuclideanDistance());
 
         // Keep track of algorithm index for easier selection
         algorithmIndex = (int)activeAlgorithm;
@@ -412,7 +412,7 @@ public class PathfindingManager : MonoBehaviour
    
     private void HandleGoalBoundMapPreprocessing()
     {
-        var p = (GoalBoundAStarPathfinding)this.pathfinding;
+        var p = (GoalBoundAStarPathfinding2)this.pathfinding;
 
         // If we haven't done the map preprocessing yet, do it now
         if(!mapPreprocessingDone)
