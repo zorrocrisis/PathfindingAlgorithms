@@ -102,14 +102,7 @@ public class PathfindingManager : MonoBehaviour
         // Finding reference of Visual Grid Manager
         visualGrid = GameObject.FindObjectOfType<VisualGridManager>();
 
-        // Creating the path for the grid and generating it
-        #if UNITY_EDITOR
-            string gridPath = "Assets/Resources/Grid/" + gridName + ".txt";
-        #else
-            string gridPath = "Assets/Resources/Grid/" + GridSceneParameters.gridName + ".txt";
-        #endif
-
-        this.LoadGrid(gridPath);
+        this.LoadGrid();
 
         // By default, we start with base A*
         #if UNITY_EDITOR
@@ -297,14 +290,18 @@ public class PathfindingManager : MonoBehaviour
     }
 
     // Reads the text file that where the grid "definition" is stored 
-    public void LoadGrid(string gridPath)
+    public void LoadGrid()
     {
+        TextAsset textAsset;
+        
+        // Creating the path for the grid and generating it
+        #if UNITY_EDITOR
+            textAsset = Resources.Load<TextAsset>("Grid/" + gridName);
+        #else
+            textAsset = Resources.Load<TextAsset>("Grid/" + GridSceneParameters.gridName);
+        #endif
 
-        // Read the text directly from the test.txt file
-        StreamReader reader = new StreamReader(gridPath);
-        var fileContent = reader.ReadToEnd();
-        reader.Close();
-        var lines = fileContent.Split("\n"[0]);
+        string[] lines = textAsset.text.Split("\n"[0]);
 
         // Calculating Height and Width from text file
         height = lines.Length;
@@ -489,17 +486,22 @@ public class PathfindingManager : MonoBehaviour
     private void ReadMapPreprocessedData()
     {
         string[] directions = { "up", "down", "left", "right"};
-        string path;
+        string fileName;
+        TextAsset textAsset;
 
         #if UNITY_EDITOR
-            path = Path.Combine(Application.dataPath, "Resources/Grid/" + gridName + "PreprocessedData.txt");
+            fileName = gridName + "PreprocessedData";
         #else
-            path = Path.Combine(Application.dataPath, "Resources/Grid" + GridSceneParameters.gridName + "PreprocessedData.txt");
+            fileName = GridSceneParameters.gridName + "PreprocessedData";
         #endif
 
-        if (!File.Exists(path))
+        
+        // Load the text asset from the Resources folder
+        textAsset = Resources.Load<TextAsset>("Grid/" + fileName);
+
+        if (textAsset == null)
         {
-            Debug.LogError("Preprocessed data file not found: " + path);
+            Debug.LogError("Preprocessed data file not found: Grid/" + fileName);
             return;
         }
 
@@ -510,7 +512,7 @@ public class PathfindingManager : MonoBehaviour
         }
 
         // Read all lines from the file containing the bound boxes
-        string[] lines = File.ReadAllLines(path);
+        string[] lines = textAsset.text.Split('\n');
 
         int directionIndex = 0;
 
