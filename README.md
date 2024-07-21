@@ -25,7 +25,8 @@ Grid Map:
 ## **Additional Pathfinding Information**
 One can find additional pathfinding information, such as position coordinates and total process time, in the **overlay UI panel in right-side of the screen**. During a pathfinding search, the grid will also showcase multiple **coloured tiles**, representing different states: **red tiles indicate "closed" nodes** (which have already been explored), whereas **blue tiles indicate "open" ondes (which have not been explored yet)**. The goal bound A* algorithm also paints the tiles according to the corresponding boundary boxes, though these colours overlap (yellow - "up" is the best starting edge; green - "down" is the best starting edge; light blue - "left" is the best starting edge; purple - "right" is the best starting edge).
 
-![Screenshot 2024-07-18 154253](https://github.com/user-attachments/assets/f88adb57-23a4-4b9b-9f21-e1dbf84edac1)
+![Screenshot 2024-07-18 154253](https://github.com/user-attachments/assets/07978a30-a238-4355-bc96-7cf23ecb56b5)
+
 
 ## **Efficiency Analysis - Introduction**
 In order to study the efficiency of pathfinding algorithms in video games, the following **main algorithms** were implemented in C# (and Unity v.2021.3.10f1): **Dijkstra** (A Star with Zero Heuristic), **A Star** (with Euclidean Distance Heuristic), **Node Array A Star** and **Goal Bound A Star**.
