@@ -28,7 +28,7 @@ One can find additional pathfinding information, such as positional coordinates,
 ![Screenshot 2024-07-18 154253](https://github.com/user-attachments/assets/07978a30-a238-4355-bc96-7cf23ecb56b5)
 
 ## **Efficiency Analysis - Introduction**
-In order to study the efficiency of pathfinding algorithms in video games, the following **main algorithms** were implemented in C# (and Unity v.2021.3.10f1): **Dijkstra** (A Star with Zero Heuristic), **A Star** (with Euclidean Distance Heuristic), **Node Array A Star** and **Goal Bound A Star**.
+In order to study the efficiency of pathfinding algorithms in video games, the following **main algorithms** were implemented in C# (and Unity v.2021.3.10f1): **Dijkstra** (A Star with Zero Heuristic), **A Star** (with Euclidean Distance Heuristic), **Node Array A Star** (with Euclidean Distance Heuristic) and **Goal Bound Node Array A Star** (with Euclidean Distance Heuristic).
 
 Additionally, the following **secondary optimisations** were implemented, **influencing the manner through which the grid nodes are stored and managed** in the Open and Closed sets: **A Star with Closed Dictionary** and **Open Priority Heap**.
 
@@ -48,24 +48,23 @@ Considering the large size of the Closed set – up to 2606 nodes using the chos
 
 After using the dictionary data structure for the Closed set (A Star with Closed Dictionary), we can indeed verify the performance of the two last methods listed (related to operations using the Closed set) drastically improved, having a great impact in the execution time of the *AStarPathfinding.Search* method. More specifically, the execution time of *SearchInClosed* and *RemoveFromClosed* decreased 120 times and 30 times, respectively.
 
-![imagem](https://github.com/user-attachments/assets/aa5531c3-99e2-4e15-9559-f6e963257567)
+![imagem](https://github.com/user-attachments/assets/99a4ddd7-89b1-495e-90d1-1711f30e858c)
 
 With the intent of further improving the performance of the A Star algorithm, a priority heap data structure was used for the Open set, in addition to the previous dictionary for the Closed set (A Star with Closed Dictionary and Open Priority Heap). This implementation slightly reduced the execution time of SearchInOpen (about 2 times lower than the previous value), and although the *AddToOpen* took, on average, longer to execute, the execution time of *GetBestAndRemove* also decreased (again, about 2 times lower). The execution time of the main method, *AStarPathfinding.Search*, also decreased 1.3 times.
 
-![imagem](https://github.com/user-attachments/assets/76de2afe-6557-4f9f-8fe3-a316a47317c5)
-
+![imagem](https://github.com/user-attachments/assets/cfcb96a6-4d3c-451d-a18c-b7052901fd0d)
 
 - **Node Array A Star**
 The implementation of the Node Array A Star algorithm (with Euclidean Distance heuristic) allowed **trading memory for speed** by eliminating the need of having a Closed set but creating an array with all existing nodes in order to keep track of their status (Unvisited, Open or Closed).
 
-![imagem](https://github.com/user-attachments/assets/e10d223a-1d2a-4726-8132-de1af982f849)
+![imagem](https://github.com/user-attachments/assets/16f665fc-c0a8-41f2-bbc3-70b4da865244)
 
 Comparing with the data in Table 1, the node record array A Star’s *SearchInClosedmethod* became 688 times faster and 6 times faster when comparing with Table 2 and 3, respectively. Also, the *RemoveFromClosed* got more than 151 times faster in relation to the original A Star algorithm in Table 1. We can also verify that the *AddToClosed*, *SearchInClosed* and *RemoveFromClosedmethods* benefit the most by using this algorithm.
 
 The main method’s (*AStarPathfinding.Search*) overall execution time was about 1.3 times faster than the one registered in Table 3, meaning that **the memory-time trade-off can be rewarding if memory does not represent a significant issue**. It is also worth noticing that while this version of the algorithm processed 19820 nodes, the algorithm with a priority heap for the Open set and a dictionary for the Closed set processed a total of 19925 nodes (slightly higher).
 
-- **Goal Bound A Star**
-The Goal Bound A Star algorithm displayed a **significant decrease in the amount of total processed nodes by giving the algorithm preferred search directions**, which lowered the execution times greatly, especially considering the dimensions of the tested grid map. Similarly, to the node array A*, there is also a **trade-off: preprocessing the map can take a considerable period of time**, despite representing a task which can be easily achieved through parallel computing... In summary, if the utilised grid map has a considerable size and is static - meaning it does not change over time - preprocessing the map and exploiting the goal bound mechanisms can offer a worthwile option in terms of pathfinding efficiency.
+- **Goal Bound Node Array A Star**
+The goal bound implementation displayed a **significant decrease in the amount of total processed nodes by giving the algorithm preferred search directions**, which lowered the execution times greatly, especially considering the dimensions of the tested grid map. Similarly, to the node array A*, there is also a **trade-off: preprocessing the map can take a considerable period of time**, despite representing a task which can be easily achieved through parallel computing... In summary, if the utilised grid map has a considerable size and is static - meaning it does not change over time - preprocessing the map and exploiting the goal bound mechanisms can offer a worthwile option in terms of pathfinding efficiency.
 
 IN certain map locations (dead ends) it can behave similarly to Dijkstra (O BASE ASTA) so we need to add impovemenets
 
