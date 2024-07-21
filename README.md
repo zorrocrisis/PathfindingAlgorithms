@@ -34,7 +34,9 @@ Additionally, the following **secondary optimisations** were implemented, **infl
 
 Within Unity, all algorithms can be turned on by enabling the corresponding *Pathfinding Settings* in the Manager’s inspector window. Additionally, the utilized grid map can be changed simply by editing the *Grid Name* property under *Grid Settings*, also in the Manager’s inspector window.
 
-Below follows a performance analysis of the aforementioned pathfinding algorithms, performed with the aid of Unity’s Profilertool. The tested path was the pre-defined path associated with key 3, using 100 nodes per search and the giant grid. The most recent node was used to solve ties in the algorithms.
+Below follows a performance analysis of the aforementioned pathfinding algorithms, performed with the aid of Unity’s Profilertool. The tested path was the pre-defined path associated with the number key "3" (see image below), using 100 nodes per search and the giant grid. The most recent node was used to solve ties in the algorithms.
+
+![imagem](https://github.com/user-attachments/assets/f6bbf793-d34d-4cf4-97de-435a0062ae7f)
 
 
 ## **Efficiency Analyis - Results**
@@ -64,7 +66,17 @@ Comparing with the data in Table 1, the node record array A Star’s *SearchInCl
 The main method’s (*AStarPathfinding.Search*) overall execution time was about 1.3 times faster than the one registered in Table 3, meaning that **the memory-time trade-off can be rewarding if memory does not represent a significant issue**. It is also worth noticing that while this version of the algorithm processed 19820 nodes, the algorithm with a priority heap for the Open set and a dictionary for the Closed set processed a total of 19925 nodes (slightly higher).
 
 - **Goal Bound Node Array A Star**
-The goal bound implementation displayed a **significant decrease in the amount of total processed nodes by giving the algorithm preferred search directions**, which lowered the execution times greatly, especially considering the dimensions of the tested grid map. Similarly, to the node array A*, there is also a **trade-off: preprocessing the map can take a considerable period of time**, despite representing a task which can be easily achieved through parallel computing... In summary, if the utilised grid map has a considerable size and is static - meaning it does not change over time - preprocessing the map and exploiting the goal bound mechanisms can offer a worthwile option in terms of pathfinding efficiency.
+The Goal Bound Node Array A Star implementation, displayed very similar results to the Node Array A Star algorithm (without the Goal Bounds), as seen in Table 5. This is unsurprising as the first algorithm is grounded on the latter, only **offering preferred search directions for the pathfinding**. However, if the preferred search direction is "obvious" (as in the case of the default starting position 3) or simply the only one available, the goal bound component of the algorithm will not provide an improved efficiency.
+
+![imagem](https://github.com/user-attachments/assets/ceb969e2-91c5-4b46-826e-c2481f10147f)
+
+On the other hand, if we consider the giant grid's default position 2 (accessed by pressing "2" on the keyboard), whose starting locations displays less "obvious" paths to the goal node, the Goal Bound Node Array A Star algorithm demonstrates a **significant decrease in the amount of total processed nodes and total processing time by exploiting the preferred search directions**. This is displayed in the screenshots below,  This is more emphasized in larger maps, of course - in the medium grid, for instance, it would be more difficult to distinguish the performance improvement of the goal bound system.
+
+![NodeArrayPos2](https://github.com/user-attachments/assets/c6020406-e9bf-4af9-9c35-a6a9c3aceffb)
+
+![GoalBoundPos2](https://github.com/user-attachments/assets/58f66f1e-242f-4c77-9515-7feb42774fbd)
+
+Similarly, to the node array A*, there is also a **trade-off: preprocessing the map can take a considerable period of time**, despite representing a task which can be easily achieved through parallel computing... In summary, if the utilised grid map has a considerable size and is static (meaning it does not change over time), preprocessing the map and exploiting the goal bound mechanisms can offer a worthwile option in terms of pathfinding efficiency. In the specific case of the Goal Bound Node Array A Star algorithm, in the worst case scenario, it behaves as a default Node Array A Star and in the best possible circumstances, it greatly improves efficiency.
 
 PNode = 19925
 PTime = 6.47
@@ -83,9 +95,6 @@ PNodes = 7725
 PTime = 2.45
 
 IN certain map locations (dead ends) it can behave similarly to Dijkstra (O BASE ASTA) so we need to add impovemenets
-
-![imagem](https://github.com/user-attachments/assets/9d4589d1-7ae0-48fd-96f3-91ef689e9fb2)
-
 
 - **Analysis Overview**
 All in all, we can state **the Node Record Array A Star algorithm displayed the best overall performance** by keeping an array as a record of all the nodes and their corresponding status, thus eliminating the need for a Closed set structure altogether.
