@@ -68,7 +68,7 @@ The goal bound implementation displayed a **significant decrease in the amount o
 
 IN certain map locations (dead ends) it can behave similarly to Dijkstra (O BASE ASTA) so we need to add impovemenets
 
-![imagem](https://github.com/user-attachments/assets/2977faf9-ab9f-4fb4-8e7e-5c8358c7a374)
+![imagem](https://github.com/user-attachments/assets/17c863be-ea5e-43ed-844b-af394a23d7ea)
 
 
 - **Analysis Overview**
