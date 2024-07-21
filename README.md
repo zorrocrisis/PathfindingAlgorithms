@@ -68,7 +68,8 @@ The goal bound implementation displayed a **significant decrease in the amount o
 
 IN certain map locations (dead ends) it can behave similarly to Dijkstra (O BASE ASTA) so we need to add impovemenets
 
-(GOAL BOUND IMAGE HERE)
+![imagem](https://github.com/user-attachments/assets/2977faf9-ab9f-4fb4-8e7e-5c8358c7a374)
+
 
 - **Analysis Overview**
 All in all, we can state **the Node Record Array A Star algorithm displayed the best overall performance** by keeping an array as a record of all the nodes and their corresponding status, thus eliminating the need for a Closed set structure altogether.
