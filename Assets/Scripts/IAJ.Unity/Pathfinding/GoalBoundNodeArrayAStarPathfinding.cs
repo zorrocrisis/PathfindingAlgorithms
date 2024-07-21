@@ -10,13 +10,13 @@ using UnityEngine;
 
 namespace Assets.Scripts.IAJ.Unity.Pathfinding
 {
-    public class GoalBoundAStarPathfinding2 : AStarPathfinding
+    public class GoalBoundNodeArrayAStarPathfinding : NodeArrayAStarPathfinding
     {
         // Auxiliary variables for precomputation process
         public bool PreComputationInProgress { get; set; }
         public IHeuristic PreprocessingHeuristic { get; protected set; }
-        public IOpenSet OpenPlaceholder { get; protected set; }
-        public IClosedSet ClosedPlaceholder { get; protected set; }
+        public IOpenSet PreprocessingOpen { get; protected set; }
+        public IClosedSet PreprocessingClosed { get; protected set; }
 
         // Goal Bounding Box for each node's edge - bounding limits: minX, maxX, minY, maxY
         public Dictionary<Vector2,Dictionary<string, Vector4>> goalBounds;
@@ -33,17 +33,13 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
         };
 
 
-        public GoalBoundAStarPathfinding2(IOpenSet open, IClosedSet closed, IHeuristic heuristic) : base(open, closed, heuristic)
+        public GoalBoundNodeArrayAStarPathfinding(IHeuristic heuristic) : base(heuristic)
         {
-            grid = new Grid<NodeRecord>((Grid<NodeRecord> global, int x, int y) => new NodeRecord(x, y));
-            this.Open = new SimpleUnorderedNodeList();
-            this.Closed = new SimpleUnorderedNodeList();
-            this.InProgress = false;
+            this.PreprocessingOpen = new SimpleUnorderedNodeList();
+            this.PreprocessingClosed = new SimpleUnorderedNodeList();
+            this.PreprocessingHeuristic = new ZeroHeuristic();
             this.PreComputationInProgress = false;
-            this.Heuristic = heuristic;
-            this.OpenPlaceholder = open;
-            this.ClosedPlaceholder = closed;
-            this.PreprocessingHeuristic = new ZeroHeuristic(); // do not change
+            this.InProgress = false;
             this.NodesPerSearch = 100;
             this.goalBounds = new Dictionary<Vector2, Dictionary<string, Vector4>>();
 
@@ -75,17 +71,13 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
 
             // Get ready for map preprocessing 
             initialNode.CalculateFCost();
-            this.Open.Initialize();
-            this.Open.AddToOpen(initialNode);
-            this.Closed.Initialize();
-
+            this.PreprocessingOpen.Initialize();
+            this.PreprocessingOpen.AddToOpen(initialNode);
+            this.PreprocessingClosed.Initialize();
         }
 
         public void MapPreprocess()
         {
-            // Ensure to use the zero heuristic during the preprocessing
-            IHeuristic heuristicPlaceholder = this.Heuristic;
-            this.Heuristic = this.PreprocessingHeuristic;
 
             this.PreComputationInProgress = true;
 
@@ -140,11 +132,6 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
                 }
             }
 
-            // Return to the desired heuristic and open/closed sets
-            this.Heuristic = heuristicPlaceholder;
-            this.Open = this.OpenPlaceholder;
-            this.Closed = this.ClosedPlaceholder;
-
             this.PreComputationInProgress = false;
         }
 
@@ -155,22 +142,19 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
             var key = new Vector2(this.StartNode.x, this.StartNode.y);
 
             uint ProcessedNodes = 0;
-            int OpenNodes = 0; 
             NodeRecord currentNode;
-
 
             while (ProcessedNodes <= NodesPerSearch)
             {   
-
-                if(this.Open.CountOpen() == 0)
+                if(this.PreprocessingOpen.CountOpen() == 0)
                 {
                     // If there aren't any more open nodes to explore, we have successfully floodfilled the map
                     return true;
                 }
 
                 // CurrentNode is the best one from the Open set, start with that
-                currentNode = this.Open.GetBestAndRemove();
-                this.Closed.AddToClosed(currentNode);
+                currentNode = this.PreprocessingOpen.GetBestAndRemove();
+                this.PreprocessingClosed.AddToClosed(currentNode);
 
                 // If we don't update the grid value here also, some nodes (like the ones in the corners) will not be updated visually
                 // because they aren't neighbours to any other opens nodes and thus are not processed through the "ProcessChildNode"
@@ -179,16 +163,13 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
                 // Handle the neighbours/children
                 foreach (var neighbourNode in GetNeighbourList(currentNode))
                 {
-
                     // During the floodfill, we will process all the nodes
-                    this.ProcessChildNode(currentNode, neighbourNode);
+                    ProcessChildNodePreprocessing(currentNode, neighbourNode);
 
                     // If the current node is the initial one...
                     if(currentNode.Equals(this.StartNode))
                     {
-                   
                        PopulateStartingNeighboursWithBestEdge(neighbourNode);
-
                     }
 
                     // If the current node is not the initial one and the neighbours do not have a best goal bound edge assigned...
@@ -220,9 +201,60 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
             return false;
         }
 
+        // Very similar to A* method. Only duplicated this to freely customise/adapt to preprocessing
+        private void ProcessChildNodePreprocessing(NodeRecord parentNode, NodeRecord node)
+        {
+
+            // Calculate cost of neighbour node
+            var newCost = parentNode.gCost + CalculateDistanceCost(parentNode, node);       
+            var newFValue = newCost + this.PreprocessingHeuristic.H(node, GoalNode);
+
+            // Auxiliary variables to check whether node is in open/closed
+            var closedNode = this.PreprocessingClosed.SearchInClosed(node);
+            var openNode = this.PreprocessingOpen.SearchInOpen(node);
+
+            // If in Closed and with a higher F value...
+            if (closedNode != null && closedNode.fCost >= newFValue)
+            {
+                //Remove from Closed, update values and add to Open
+                this.PreprocessingClosed.RemoveFromClosed(closedNode);
+                closedNode.gCost = newCost;
+                closedNode.hCost = this.PreprocessingHeuristic.H(node, GoalNode);
+                closedNode.CalculateFCost();
+                closedNode.parent = parentNode;
+                this.PreprocessingOpen.AddToOpen(closedNode);
+            }
+
+            // If in Open and with a higher F value..
+            else if (openNode != null && openNode.fCost >= newFValue)
+            {
+                // Update the costs
+                openNode.gCost = newCost;
+                openNode.hCost = this.PreprocessingHeuristic.H(node, GoalNode);
+                openNode.CalculateFCost();
+                openNode.parent = parentNode;
+
+            }
+
+            // If node is not in any list ....
+            else if (closedNode == null && openNode == null)
+            {        
+                // Update the costs and add to Open
+                node.gCost = newCost;
+                node.hCost = this.PreprocessingHeuristic.H(node, GoalNode);
+                node.CalculateFCost();
+                node.parent = parentNode;
+                this.PreprocessingOpen.AddToOpen(node);
+            }
+
+            // Update the actual grid value
+            grid.SetGridObject(node.x, node.y, node);
+        }
+
         
         // Again very similar to the A star algorithm, now with a goal node
-        public override bool Search(out List<NodeRecord> solution) {
+        public override bool Search(out List<NodeRecord> solution)
+        {
 
             uint ProcessedNodes = 0;
             int OpenNodes = 0; 
@@ -231,14 +263,14 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
             // While Open is not empty or if nodes havent been all processed, we continue to search (also controlled from the pahtfinding manager) 
             while (ProcessedNodes <= NodesPerSearch)
             {
-                if (Open.CountOpen() == 0)
+                if (this.Open.CountOpen() == 0)
                 {
                     solution = null;
                     return true;
                 }
 
                 // CurrentNode is the best one from the Open set, start with that
-                currentNode = Open.GetBestAndRemove();
+                currentNode = this.Open.GetBestAndRemove();
 
                 // Check if current node is the goal
                 if (currentNode.Equals(GoalNode))
@@ -249,7 +281,7 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
                 }
 
                 // Add current node to closed set
-                Closed.AddToClosed(currentNode);
+                this.Closed.AddToClosed(currentNode);
 
                 // If we don't update the grid value here also, some nodes (like the ones in the corners) will not be updated visually
                 // because they aren't neighbours to any other opens nodes and thus are not processed through the "ProcessChildNode"
@@ -265,7 +297,7 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
                         this.ProcessChildNode(currentNode, neighbourNode);
 
                         //Keeps the maximum size that the open list had (debugging purposes)
-                        OpenNodes = Open.CountOpen();
+                        OpenNodes = this.Open.CountOpen();
                         if (OpenNodes > this.MaxOpenNodes)
                             this.MaxOpenNodes = OpenNodes;
 
@@ -284,7 +316,7 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
         
         }
 
-
+        // Check whether given generic node and goal node are both inside one of the goal boxes of the starting node
         public bool GoalBoundBothInside(int startX, int startY, int genericX, int genericY, int goalX, int goalY)
         {
             var key = new Vector2(startX, startY);

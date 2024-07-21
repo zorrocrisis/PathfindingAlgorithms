@@ -116,8 +116,8 @@ public class UIManager : MonoBehaviour
                 debugPathfindingAlgorithm.text = "A* - Open Priority Heap, Closed Dictionary and Euclidean Heuristic";
             else if(manager.activeAlgorithm == PathfindingManager.algorithmEnum.NodeArrayAStar)
                 debugPathfindingAlgorithm.text = "Node Array A* - Euclidean Heuristic";
-            else if(manager.activeAlgorithm == PathfindingManager.algorithmEnum.GoalBoundAStar)
-                debugPathfindingAlgorithm.text = "Goal Bound A* - Zero Heuristic";
+            else if(manager.activeAlgorithm == PathfindingManager.algorithmEnum.GoalBoundNodeArrayAStar)
+                debugPathfindingAlgorithm.text = "Goal Bound Node Array A* - Euclidean Heuristic";
 
         }
 

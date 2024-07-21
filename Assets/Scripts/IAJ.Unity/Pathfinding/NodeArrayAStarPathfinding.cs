@@ -67,7 +67,7 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
                 unvisitedNode.hCost = Heuristic.H(neighbourNode, GoalNode);
                 unvisitedNode.CalculateFCost();
                 unvisitedNode.parent = parentNode;
-                NodeRecordArray.AddToOpen(unvisitedNode); //updates status and adds the node to the open list
+                Open.AddToOpen(unvisitedNode); // updates status and adds the node to the open list
             }
 
             // Update the actual grid value

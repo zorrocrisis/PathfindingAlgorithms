@@ -150,9 +150,7 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding
             var key = new Vector2(this.StartNode.x, this.StartNode.y);
 
             uint ProcessedNodes = 0;
-            int OpenNodes = 0; 
             NodeRecord currentNode;
-
 
             while (ProcessedNodes <= NodesPerSearch)
             {   

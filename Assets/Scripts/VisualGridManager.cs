@@ -238,7 +238,7 @@ public class VisualGridManager : MonoBehaviour
     // Method that draws the bounding box according to the colors defined in the inspector
     public void fillBoundingBox(NodeRecord node)
     {
-        var goalBoundingPathfinder = (GoalBoundAStarPathfinding2)manager.pathfinding;
+        var goalBoundingPathfinder = (GoalBoundNodeArrayAStarPathfinding)manager.pathfinding;
       
         for (int x = 0; x < this.width; x++)
             for (int y = 0; y < this.height; y++)

@@ -81,7 +81,7 @@ public class PathfindingManager : MonoBehaviour
     AStarClosedDictionary,
     AStarPriorityHeap,
     NodeArrayAStar,
-    GoalBoundAStar
+    GoalBoundNodeArrayAStar
     };
 
     // Final path / solution
@@ -136,7 +136,7 @@ public class PathfindingManager : MonoBehaviour
 
 
         // If we're using the goal bound pathfinding, draw the bounding boxes
-        if(activeAlgorithm == algorithmEnum.GoalBoundAStar)
+        if(activeAlgorithm == algorithmEnum.GoalBoundNodeArrayAStar)
         {
             drawBoundingBoxes();
         }
@@ -273,7 +273,7 @@ public class PathfindingManager : MonoBehaviour
                     if (node != null && node.isWalkable)
                     {
                         // Draw the bounding boxes in case of goal bound 
-                        if(activeAlgorithm == algorithmEnum.GoalBoundAStar)
+                        if(activeAlgorithm == algorithmEnum.GoalBoundNodeArrayAStar)
                         {
                             visualGrid.fillBoundingBox(this.pathfinding.grid.GetGridObject(startingX, startingY));
                             boundingBoxesOn = true;
@@ -362,14 +362,14 @@ public class PathfindingManager : MonoBehaviour
             this.pathfinding = new AStarPathfinding(new NodePriorityHeap(), new ClosedDictionary(), new EuclideanDistance());
         else if (activeAlgorithm == algorithmEnum.NodeArrayAStar)
             this.pathfinding = new NodeArrayAStarPathfinding(new EuclideanDistance());
-        else if (activeAlgorithm == algorithmEnum.GoalBoundAStar)
-            this.pathfinding = new GoalBoundAStarPathfinding2(new NodePriorityHeap(), new ClosedDictionary(), new EuclideanDistance());
+        else if (activeAlgorithm == algorithmEnum.GoalBoundNodeArrayAStar)
+            this.pathfinding = new GoalBoundNodeArrayAStarPathfinding(new EuclideanDistance());
 
         // Keep track of algorithm index for easier selection
         algorithmIndex = (int)activeAlgorithm;
         
         // When using goal bound pathfinding, we need to preprocess the map before proceeding
-        if (activeAlgorithm == algorithmEnum.GoalBoundAStar)
+        if (activeAlgorithm == algorithmEnum.GoalBoundNodeArrayAStar)
         {
             HandleGoalBoundMapPreprocessing();
         }
@@ -412,7 +412,7 @@ public class PathfindingManager : MonoBehaviour
    
     private void HandleGoalBoundMapPreprocessing()
     {
-        var p = (GoalBoundAStarPathfinding2)this.pathfinding;
+        var p = (GoalBoundNodeArrayAStarPathfinding)this.pathfinding;
 
         // If we haven't done the map preprocessing yet, do it now
         if(!mapPreprocessingDone)
