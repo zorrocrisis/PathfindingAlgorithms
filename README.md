@@ -8,7 +8,7 @@ The following document indicates how to access the source code, utilise the exec
 ## **Source Files and Application**
 The project's source files can be downloaded from this repository. To open the program using Unity (v.2021.3.10f1), simply clone the repository and open the project utilising Unity Hub.
 
-To test the application, only the files contained in the "Build" folder are necessary. The application can also be found on [this separate repoitory](https://github.com/zorrocrisis/PathfindingAlgorithmsBuildOnly/tree/main). Once the build files are downloaded, simply start the executable (see the controls below).
+To test the application, only the files contained in the "Build" folder are necessary. The application can also be found on [this separate repository](https://github.com/zorrocrisis/PathfindingAlgorithmsBuildOnly/tree/main). Once the build files are downloaded, simply start the executable (see the controls below).
 
 ## **Application's Controls**
 
