@@ -77,7 +77,7 @@ On the other hand, if we consider the giant grid's default position 2 (accessed 
 
 Similarly, to the Node Array A Star, there is also a **trade-off: preprocessing the map can take a considerable period of time**, despite representing a task which can be easily achieved through parallel computing... In summary, if the utilised grid map has a considerable size and is static (meaning it does not change over time), preprocessing the map and exploiting the goal bound mechanisms can offer a worthwile option in terms of pathfinding efficiency. In the specific case of the Goal Bound Node Array A Star algorithm, in the worst case scenario, it behaves as a Node Array A Star, and in the best possible circumstances, it greatly improves efficiency.
 
-- **Analysis Overview**
+## **Analysis Overview**
 All in all, we can state **the Goal Bound Node Record Array A Star algorithm displayed the best overall performance** by keeping an array as a record of all the nodes and their corresponding status, thus eliminating the need for a Closed set structure altogether, and by exploiting preferred search directions.
 
 Even more, **this algorithm can be easily improved by implementing a more effective heuristic** and/or applying a different way of storing nodes and their attributes, instead of an array.
