@@ -87,7 +87,7 @@ By implementing the Goal Bound Node Record Array A Star algorithm, however, **on
 
 ## **Authors and Acknowledgements**
 
-This project was developed by **[Miguel Belbute (zorrocrisis)](https://github.com/zorrocrisis)** with contributions from Guilherme Serpa and Peng Li.
+This project was developed by **[Miguel Belbute (zorrocrisis)](https://github.com/zorrocrisis)**.
 
 The initial code was supplied by **[Prof. Pedro dos Santos](https://fenix.tecnico.ulisboa.pt/homepage/ist12886)**
 
